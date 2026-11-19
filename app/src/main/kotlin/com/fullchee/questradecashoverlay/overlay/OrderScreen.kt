@@ -12,8 +12,10 @@ private const val SELECTED_ACCOUNT_ID = "oe-account-selector-selected-account-na
 // The open picker keeps the old selection underneath, so its selected card is the newer answer.
 private val selectedPickerCard = Regex("""oe-account-selector-account-card-(\d+)-selected""")
 
+private const val TOTAL_AMOUNT = "Total amount"
+
 // Questrade's API holds cash only in CAD and USD.
-private val orderCurrency = Regex("""Total amount, \$, (CAD|USD)""")
+private val orderCurrency = Regex("""$TOTAL_AMOUNT, \$, (CAD|USD)""")
 
 /** [currency] is null when the screen doesn't say which currency the order is in. */
 data class OrderScreen(val account: AccountNumber, val currency: Currency?)
@@ -38,6 +40,8 @@ private fun selectedAccount(nodes: List<AccessibilityNodeInfo>): AccountNumber? 
         pickerCard?.let { "oe-account-selector-account-card-$it-acoount-name" }
             ?: SELECTED_ACCOUNT_ID
     byId[labelId]?.text?.let { return parseAccountNumber(it.toString()) }
+    // Other Questrade screens show account labels too, so only the order form's total marks this as the order screen.
+    if (nodes.none { it.contentDescription?.startsWith(TOTAL_AMOUNT) == true }) return null
     // Questrade renamed its IDs: trust the account label only when it can't be another card's.
     return nodes.mapNotNull { node -> node.text?.let { parseAccountNumber(it.toString()) } }
         .distinct()

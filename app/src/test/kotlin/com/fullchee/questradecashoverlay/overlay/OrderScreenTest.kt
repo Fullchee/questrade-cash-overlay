@@ -80,7 +80,12 @@ class OrderScreenTest {
 
     @Test
     fun `without the selector IDs the only account label on screen is used`() {
-        val screen = node(children = listOf(node(text = "RRSP - 33333333")))
+        val screen = node(
+            children = listOf(
+                node(text = "RRSP - 33333333"),
+                node(contentDescription = "Total amount, $, CAD")
+            )
+        )
 
         assertEquals(AccountNumber("33333333"), readOrderScreen(screen)?.account)
     }
@@ -88,10 +93,19 @@ class OrderScreenTest {
     @Test
     fun `without the selector IDs two account labels are ambiguous`() {
         val screen = node(
-            children = listOf(node(text = "Cash - 11111111"), node(text = "RRSP - 33333333"))
+            children = listOf(
+                node(text = "Cash - 11111111"),
+                node(text = "RRSP - 33333333"),
+                node(contentDescription = "Total amount, $, CAD")
+            )
         )
 
         assertNull(readOrderScreen(screen))
+    }
+
+    @Test
+    fun `an account label off the order form is not the order screen`() {
+        assertNull(readOrderScreen(node(children = listOf(node(text = "TFSA - 22222222")))))
     }
 
     @Test
