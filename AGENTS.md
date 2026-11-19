@@ -1,6 +1,6 @@
 # Questrade cash overlay
 
-Android app (Kotlin) that shows the selected Questrade account's CAD and USD cash on the order screen. Scope: `docs/intent/questrade-cash-overlay.md`. Steps: `docs/plan.md`, one GitHub issue per step.
+Android app (Kotlin) that shows how much cash the selected Questrade account holds in the order's currency, on the order screen. Scope: `docs/intent/questrade-cash-overlay.md`. Steps: `docs/plan.md`, one GitHub issue per step.
 
 ## Agent skills
 
