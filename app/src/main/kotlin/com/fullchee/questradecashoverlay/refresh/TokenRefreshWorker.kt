@@ -6,6 +6,7 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingPeriodicWorkPolicy
@@ -18,6 +19,7 @@ import com.fullchee.questradecashoverlay.R
 import com.fullchee.questradecashoverlay.logins.Login
 import com.fullchee.questradecashoverlay.logins.LoginStore
 import com.fullchee.questradecashoverlay.logins.loginStore
+import com.fullchee.questradecashoverlay.questrade.Account
 import com.fullchee.questradecashoverlay.questrade.QuestradeClient
 import com.fullchee.questradecashoverlay.questrade.QuestradeException
 import com.fullchee.questradecashoverlay.questrade.Session
@@ -27,6 +29,7 @@ import okhttp3.OkHttpClient
 
 internal const val TOKEN_REFRESH_WORK = "token_refresh"
 private const val LOGIN_ALERTS_CHANNEL = "login_alerts"
+private const val TAG = "TokenRefreshWorker"
 
 /** Safe to call on every app start: an already scheduled job keeps its timing. */
 fun scheduleTokenRefresh(context: Context) {
@@ -37,28 +40,46 @@ fun scheduleTokenRefresh(context: Context) {
         .enqueueUniquePeriodicWork(TOKEN_REFRESH_WORK, ExistingPeriodicWorkPolicy.KEEP, request)
 }
 
-/** Rotates every login's refresh token, so a login nobody uses still holds a live one. */
+/**
+ * Rotates every login's refresh token, so a login nobody uses still holds a live one,
+ * and reloads its accounts, so an account opened since the login was added gets an overlay.
+ */
 class TokenRefreshWorker(
     context: Context,
     params: WorkerParameters,
     private val store: LoginStore,
-    private val refresh: suspend (refreshToken: String) -> Session
+    private val refresh: suspend (refreshToken: String) -> Session,
+    private val accounts: suspend (Session) -> List<Account>
 ) : CoroutineWorker(context, params) {
     // WorkManager's default factory builds workers through this constructor.
     constructor(context: Context, params: WorkerParameters) : this(
         context,
         params,
         loginStore(context),
-        QuestradeClient(OkHttpClient())::refresh
+        QuestradeClient(OkHttpClient())
     )
+
+    private constructor(
+        context: Context,
+        params: WorkerParameters,
+        store: LoginStore,
+        questrade: QuestradeClient
+    ) : this(context, params, store, questrade::refresh, questrade::accounts)
 
     override suspend fun doWork(): Result {
         var retryLater = false
         for (login in store.logins.first()) {
-            try {
+            val session = try {
                 store.rotate(login.id, refresh)
             } catch (e: QuestradeException) {
                 if (e.isTemporary) retryLater = true else notifyNeedsReconnecting(login)
+                continue
+            }
+            try {
+                store.setAccounts(login.id, accounts(session).map { it.number })
+            } catch (e: QuestradeException) {
+                // The token is already saved; the old account list stays until tomorrow's run.
+                Log.w(TAG, "Couldn't reload a login's accounts", e)
             }
         }
         // WorkManager's backoff reruns every login; rotating a fresh token again is harmless.

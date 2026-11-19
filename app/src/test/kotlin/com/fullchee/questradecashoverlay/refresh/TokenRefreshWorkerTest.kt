@@ -8,11 +8,13 @@ import androidx.work.ListenableWorker
 import androidx.work.WorkerFactory
 import androidx.work.WorkerParameters
 import androidx.work.testing.TestListenableWorkerBuilder
+import com.fullchee.questradecashoverlay.AccountNumber
 import com.fullchee.questradecashoverlay.MainActivity
 import com.fullchee.questradecashoverlay.logins.Login
 import com.fullchee.questradecashoverlay.logins.LoginStatus
 import com.fullchee.questradecashoverlay.logins.LoginStore
 import com.fullchee.questradecashoverlay.logins.memoryDataStore
+import com.fullchee.questradecashoverlay.questrade.Account
 import com.fullchee.questradecashoverlay.questrade.QuestradeException
 import com.fullchee.questradecashoverlay.questrade.Session
 import java.io.IOException
@@ -106,6 +108,35 @@ class TokenRefreshWorkerTest {
     }
 
     @Test
+    fun `each login's accounts are reloaded`() = runTest {
+        val mom = store.add("Mom", "mom-1")
+        store.setAccounts(mom, listOf(AccountNumber("11111111")))
+
+        runWorker(accounts = { listOf(account("11111111"), account("22222222")) })
+
+        assertEquals(
+            listOf(AccountNumber("11111111"), AccountNumber("22222222")),
+            store.logins.first().single().accounts
+        )
+    }
+
+    @Test
+    fun `a failed account reload keeps the old accounts and the new token`() = runTest {
+        val mom = store.add("Mom", "mom-1")
+        store.setAccounts(mom, listOf(AccountNumber("11111111")))
+
+        val result = runWorker(accounts = { throw QuestradeException.HttpError(503) })
+
+        assertEquals(ListenableWorker.Result.success(), result)
+        assertEquals(
+            listOf(Login(mom, "Mom", LoginStatus.Ok, listOf(AccountNumber("11111111")))),
+            store.logins.first()
+        )
+        assertEquals(listOf("mom-1"), spent)
+        assertEquals(0, notifications().size)
+    }
+
+    @Test
     fun `tapping the notification opens the app`() = runTest {
         store.add("Mom", "mom-1")
 
@@ -115,22 +146,26 @@ class TokenRefreshWorkerTest {
         assertEquals(MainActivity::class.java.name, tap.component?.className)
     }
 
-    private suspend fun runWorker(refresh: suspend (String) -> Session = questrade) =
-        TestListenableWorkerBuilder<TokenRefreshWorker>(app)
-            .setWorkerFactory(
-                object : WorkerFactory() {
-                    override fun createWorker(
-                        appContext: Context,
-                        workerClassName: String,
-                        workerParameters: WorkerParameters
-                    ) = TokenRefreshWorker(appContext, workerParameters, store, refresh)
-                }
-            )
-            .build()
-            .doWork()
+    private suspend fun runWorker(
+        accounts: suspend (Session) -> List<Account> = { emptyList() },
+        refresh: suspend (String) -> Session = questrade
+    ) = TestListenableWorkerBuilder<TokenRefreshWorker>(app)
+        .setWorkerFactory(
+            object : WorkerFactory() {
+                override fun createWorker(
+                    appContext: Context,
+                    workerClassName: String,
+                    workerParameters: WorkerParameters
+                ) = TokenRefreshWorker(appContext, workerParameters, store, refresh, accounts)
+            }
+        )
+        .build()
+        .doWork()
 
     private fun notifications() =
         shadowOf(app.getSystemService(NotificationManager::class.java)).allNotifications
+
+    private fun account(number: String) = Account(AccountNumber(number), "TFSA")
 
     private fun session(refreshToken: String) =
         Session("access", "https://api01.iq.questrade.com/".toHttpUrl(), refreshToken)
