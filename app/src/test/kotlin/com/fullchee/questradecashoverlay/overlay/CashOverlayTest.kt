@@ -1,6 +1,7 @@
 package com.fullchee.questradecashoverlay.overlay
 
 import android.content.Context
+import android.graphics.Rect
 import android.view.accessibility.AccessibilityNodeInfo
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -16,6 +17,8 @@ import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
@@ -25,7 +28,8 @@ import org.robolectric.annotation.Config
 class CashOverlayTest {
     private val resources = ApplicationProvider.getApplicationContext<Context>().resources
     private val wakeUps = Channel<Unit>(Channel.CONFLATED)
-    private val rendered = mutableListOf<String?>()
+    private val renders = mutableListOf<OverlayContent?>()
+    private val rendered get() = renders.map { it?.text }
 
     private var root: AccessibilityNodeInfo? = viewTreeFixture("order-screen")
     private var cash: Map<Currency, BigDecimal>? = mapOf(
@@ -40,6 +44,56 @@ class CashOverlayTest {
 
         assertEquals(listOf(AccountNumber("22222222")), asked)
         assertEquals(listOf<String?>("CAD cash: $1,234.56"), rendered)
+    }
+
+    @Test
+    fun `the overlay sits beside the Total amount box`() = runTest {
+        start()
+
+        assertEquals(Rect(42, 706, 1038, 880), renders.single()?.totalBox)
+    }
+
+    @Test
+    fun `a total above the cash in its currency marks the cash short`() = runTest {
+        root = orderScreen(totalAmount = "Total amount, $, CAD", total = "1,234.57")
+
+        start()
+
+        assertTrue(renders.single()!!.cashShort)
+    }
+
+    @Test
+    fun `a total equal to the cash is not short`() = runTest {
+        root = orderScreen(totalAmount = "Total amount, $, CAD", total = "1234.56")
+
+        start()
+
+        assertFalse(renders.single()!!.cashShort)
+    }
+
+    @Test
+    fun `the total is compared with cash in the order's currency only`() = runTest {
+        root = orderScreen(totalAmount = "Total amount, $, USD", total = "500")
+
+        start()
+
+        assertTrue(renders.single()!!.cashShort)
+    }
+
+    @Test
+    fun `without a total the cash is not short`() = runTest {
+        start()
+
+        assertFalse(renders.single()!!.cashShort)
+    }
+
+    @Test
+    fun `with an unknown currency the cash is not short`() = runTest {
+        root = orderScreen(totalAmount = null, total = "1000000")
+
+        start()
+
+        assertFalse(renders.single()!!.cashShort)
     }
 
     @Test
@@ -174,15 +228,16 @@ class CashOverlayTest {
             cash
         }
     ) {
-        val overlay = CashOverlay(resources, { root }, cashOf) { rendered += it }
+        val overlay = CashOverlay(resources, { root }, cashOf) { renders += it }
         backgroundScope.launch { overlay.run(wakeUps) }
         runCurrent()
     }
 
-    private fun orderScreen(totalAmount: String?) = node(
+    private fun orderScreen(totalAmount: String?, total: String? = null) = node(
         children = listOfNotNull(
             node(viewId = "oe-account-selector-selected-account-name", text = "TFSA - 22222222"),
-            totalAmount?.let { node(contentDescription = it) }
+            totalAmount?.let { node(contentDescription = it) },
+            total?.let { node(viewId = "order-entry-setup-dollar-amount", text = it) }
         )
     )
 

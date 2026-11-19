@@ -3,6 +3,8 @@ package com.fullchee.questradecashoverlay.overlay
 import android.accessibilityservice.AccessibilityService
 import android.graphics.Color
 import android.graphics.PixelFormat
+import android.graphics.Rect
+import android.graphics.Typeface
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.WindowManager
@@ -41,47 +43,64 @@ class CashOverlayService : AccessibilityService() {
         super.onDestroy()
     }
 
-    /** Shows [text] in the overlay, or removes the overlay on null. */
-    internal fun render(text: String?) {
+    /** Shows [content] in the overlay, or removes the overlay on null. */
+    internal fun render(content: OverlayContent?) {
         val windows = getSystemService(WindowManager::class.java)
         val view = shown
         when {
-            text == null -> view?.let {
+            content == null -> view?.let {
                 windows.removeView(it)
                 shown = null
             }
-            view != null -> view.text = text
-            else -> shown = overlayView(text).also { windows.addView(it, overlayLayout()) }
+            view != null -> {
+                view.show(content)
+                windows.updateViewLayout(view, overlayLayout(content.totalBox))
+            }
+            else -> shown = TextView(this).also {
+                it.setTextSize(TypedValue.COMPLEX_UNIT_SP, 20f)
+                it.setBackgroundColor(OVERLAY_BACKGROUND)
+                it.setPadding(dp(12), dp(6), dp(12), dp(6))
+                it.show(content)
+                windows.addView(it, overlayLayout(content.totalBox))
+            }
         }
     }
 
-    private fun overlayView(text: String) = TextView(this).apply {
-        this.text = text
-        setTextColor(Color.WHITE)
-        setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
-        setBackgroundColor(OVERLAY_BACKGROUND)
-        val padding = dp(8)
-        setPadding(padding, padding, padding, padding)
+    private fun TextView.show(content: OverlayContent) {
+        text = content.text
+        setTextColor(if (content.cashShort) SHORT_COLOR else Color.WHITE)
+        typeface = if (content.cashShort) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
     }
 
     // Not touchable: taps pass through to Questrade's order form underneath.
-    private fun overlayLayout() = WindowManager.LayoutParams(
+    private fun overlayLayout(totalBox: Rect?) = WindowManager.LayoutParams(
         WindowManager.LayoutParams.WRAP_CONTENT,
         WindowManager.LayoutParams.WRAP_CONTENT,
         WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
         WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-            WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
+            WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
+            // Screen coordinates, so the overlay lines up with the box's accessibility bounds.
+            WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
         PixelFormat.TRANSLUCENT
     ).apply {
-        // Top right sits beside the symbol header, clear of the order fields (spike 0 bounds).
         gravity = Gravity.TOP or Gravity.END
-        x = dp(16)
-        y = dp(64)
+        if (totalBox == null) {
+            // Top right sits beside the symbol header (spike 0 bounds).
+            x = dp(16)
+            y = dp(64)
+        } else {
+            // The box's top right holds only its currency label, which the overlay repeats (spike 0 bounds).
+            x = resources.displayMetrics.widthPixels - totalBox.right + dp(8)
+            y = totalBox.top + dp(4)
+        }
     }
 
     private fun dp(value: Int) = (value * resources.displayMetrics.density).toInt()
 
     private companion object {
-        val OVERLAY_BACKGROUND = Color.argb(220, 33, 33, 33)
+        val OVERLAY_BACKGROUND = Color.argb(235, 33, 33, 33)
+
+        // Bright enough to read on the dark background.
+        val SHORT_COLOR = Color.rgb(255, 82, 82)
     }
 }
