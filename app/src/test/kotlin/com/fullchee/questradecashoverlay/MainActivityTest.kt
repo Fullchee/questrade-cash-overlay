@@ -46,7 +46,7 @@ class MainActivityTest {
     @Test
     fun finishingOnboardingShowsTheAppAndIsRemembered() {
         ActivityScenario.launch(MainActivity::class.java)
-        repeat(4) { composeRule.onNodeWithText("Next").performClick() }
+        repeat(3) { composeRule.onNodeWithText("Next").performClick() }
 
         composeRule.onNodeWithText("Finish").performClick()
 

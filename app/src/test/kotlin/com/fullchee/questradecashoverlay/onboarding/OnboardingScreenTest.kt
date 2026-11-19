@@ -100,6 +100,7 @@ class OnboardingScreenTest {
 
     @Test
     fun tickingAutostartMarksItDone() {
+        shadowOf(composeRule.activity.packageManager).addActivityIfNotPresent(xiaomiAutostart)
         showOnboarding()
         clickNext(4)
 
@@ -110,9 +111,18 @@ class OnboardingScreenTest {
     }
 
     @Test
+    fun batteryIsTheLastStepWithoutXiaomiSecurityCenter() {
+        showOnboarding()
+        clickNext(3)
+
+        composeRule.onNodeWithText("Battery").assertIsDisplayed()
+        composeRule.onNodeWithText("Finish").assertIsDisplayed()
+    }
+
+    @Test
     fun finishOnTheLastStepEndsOnboarding() {
         showOnboarding()
-        clickNext(4)
+        clickNext(3)
 
         composeRule.onNodeWithText("Finish").performClick()
 

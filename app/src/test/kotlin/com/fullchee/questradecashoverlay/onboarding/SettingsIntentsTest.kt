@@ -1,22 +1,16 @@
 package com.fullchee.questradecashoverlay.onboarding
 
 import android.app.Application
-import android.content.ComponentName
 import android.provider.Settings
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.Shadows.shadowOf
 
 @RunWith(AndroidJUnit4::class)
 class SettingsIntentsTest {
     private val app = ApplicationProvider.getApplicationContext<Application>()
-    private val xiaomiAutostart = ComponentName(
-        "com.miui.securitycenter",
-        "com.miui.permcenter.autostart.AutoStartManagementActivity"
-    )
 
     @Test
     fun restrictedSettingsOpensAppInfo() {
@@ -50,19 +44,9 @@ class SettingsIntentsTest {
     }
 
     @Test
-    fun autostartOpensXiaomiSecurityCenterWhenInstalled() {
-        shadowOf(app.packageManager).addActivityIfNotPresent(xiaomiAutostart)
-
+    fun autostartOpensXiaomiSecurityCenter() {
         val intent = settingsIntent(SetupStep.AUTOSTART, app)
 
         assertEquals(xiaomiAutostart, intent.component)
-    }
-
-    @Test
-    fun autostartFallsBackToAppInfoWithoutXiaomiSecurityCenter() {
-        val intent = settingsIntent(SetupStep.AUTOSTART, app)
-
-        assertEquals(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, intent.action)
-        assertEquals("package:${app.packageName}", intent.dataString)
     }
 }

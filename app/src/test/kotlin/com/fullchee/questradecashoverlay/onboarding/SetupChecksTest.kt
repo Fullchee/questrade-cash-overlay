@@ -8,6 +8,7 @@ import android.provider.Settings
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.fullchee.questradecashoverlay.overlay.CashOverlayService
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -88,6 +89,18 @@ class SetupChecksTest {
         shadowOf(powerManager).setIgnoringBatteryOptimizations(app.packageName, true)
 
         assertTrue(checks.isDone(SetupStep.BATTERY))
+    }
+
+    @Test
+    fun stepsSkipAutostartWithoutXiaomiSecurityCenter() {
+        assertEquals(SetupStep.entries - SetupStep.AUTOSTART, checks.steps())
+    }
+
+    @Test
+    fun stepsIncludeAutostartWithXiaomiSecurityCenter() {
+        shadowOf(app.packageManager).addActivityIfNotPresent(xiaomiAutostart)
+
+        assertEquals(SetupStep.entries, checks.steps())
     }
 
     @Test

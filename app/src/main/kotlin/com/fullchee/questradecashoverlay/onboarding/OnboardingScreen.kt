@@ -29,8 +29,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.fullchee.questradecashoverlay.R
 
-private val steps = SetupStep.entries
-
 private class StepText(@param:StringRes val title: Int, @param:StringRes val body: Int)
 
 private fun textOf(step: SetupStep) = when (step) {
@@ -62,6 +60,7 @@ fun OnboardingScreen(
     openSettings: (SetupStep) -> Unit,
     onFinished: () -> Unit
 ) {
+    val steps = remember { checks.steps() }
     var index by rememberSaveable { mutableIntStateOf(0) }
     // Bumped on every resume so each check reruns after the owner returns from a settings page.
     var checkRound by remember { mutableIntStateOf(0) }

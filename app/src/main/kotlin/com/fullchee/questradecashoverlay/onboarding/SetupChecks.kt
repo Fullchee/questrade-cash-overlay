@@ -3,6 +3,7 @@ package com.fullchee.questradecashoverlay.onboarding
 import android.Manifest
 import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.PowerManager
 import android.provider.Settings
@@ -11,8 +12,20 @@ import com.fullchee.questradecashoverlay.overlay.CashOverlayService
 
 enum class SetupStep { RESTRICTED_SETTINGS, ACCESSIBILITY, NOTIFICATIONS, BATTERY, AUTOSTART }
 
+internal val xiaomiAutostart = ComponentName(
+    "com.miui.securitycenter",
+    "com.miui.permcenter.autostart.AutoStartManagementActivity"
+)
+
 class SetupChecks(private val context: Context) {
     private val prefs = context.getSharedPreferences("onboarding", Context.MODE_PRIVATE)
+
+    // Only Xiaomi's security center blocks background starts, so other phones skip Autostart.
+    fun steps(): List<SetupStep> = if (hasXiaomiAutostart()) {
+        SetupStep.entries
+    } else {
+        SetupStep.entries - SetupStep.AUTOSTART
+    }
 
     fun isDone(step: SetupStep): Boolean = when (step) {
         // Android blocks enabling a sideloaded app's accessibility service until restricted settings are allowed.
@@ -32,6 +45,9 @@ class SetupChecks(private val context: Context) {
     fun isOnboardingFinished(): Boolean = prefs.getBoolean(ONBOARDING_FINISHED, false)
 
     fun markOnboardingFinished() = prefs.edit { putBoolean(ONBOARDING_FINISHED, true) }
+
+    private fun hasXiaomiAutostart() =
+        context.packageManager.resolveActivity(Intent().setComponent(xiaomiAutostart), 0) != null
 
     private fun isOverlayServiceEnabled(): Boolean {
         val overlayService = ComponentName(context, CashOverlayService::class.java)
