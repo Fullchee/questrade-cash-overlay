@@ -37,4 +37,6 @@
     <string name="logins_error_invalid_token">Questrade rejected this token. Generate a new one and paste it here.</string>
     <string name="logins_error_network">Couldn\'t reach Questrade. Check the connection and try again.</string>
     <string name="logins_error_questrade">Questrade sent an error. Try again later.</string>
+    <string name="overlay_cad_cash">CAD cash: %1$s</string>
+    <string name="overlay_usd_cash">USD cash: %1$s</string>
 </resources>
