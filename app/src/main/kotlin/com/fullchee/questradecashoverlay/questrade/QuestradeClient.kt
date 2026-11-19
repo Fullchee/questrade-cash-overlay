@@ -28,49 +28,67 @@ class QuestradeClient(
 ) {
     private val json = Json { ignoreUnknownKeys = true }
 
+    // The server may have spent the refresh token before the connection dropped; a resend burns its successor.
+    private val loginHttp = http.newBuilder().retryOnConnectionFailure(false).build()
+
     suspend fun refresh(refreshToken: String): Session {
         val url = loginServer.newBuilder()
             .addPathSegments("oauth2/token")
             .addQueryParameter("grant_type", "refresh_token")
             .addQueryParameter("refresh_token", refreshToken)
             .build()
-        val body = json.decodeFromString<TokenResponse>(get(Request.Builder().url(url).build()))
-        return Session(body.accessToken, body.apiServer.toHttpUrl(), body.refreshToken)
+        return get(loginHttp, Request.Builder().url(url).build()) { text ->
+            val body = json.decodeFromString<TokenResponse>(text)
+            Session(body.accessToken, body.apiServer.toHttpUrl(), body.refreshToken)
+        }
     }
 
-    suspend fun accounts(session: Session): List<Account> {
-        val body = json.decodeFromString<AccountsResponse>(get(session, "v1/accounts"))
-        return body.accounts.map { Account(AccountNumber(it.number), it.type) }
+    suspend fun accounts(session: Session): List<Account> = get(session, "v1/accounts") { text ->
+        json.decodeFromString<AccountsResponse>(text).accounts.map {
+            Account(AccountNumber(it.number), it.type)
+        }
     }
 
-    suspend fun cashBalances(session: Session, account: AccountNumber): Map<Currency, BigDecimal> {
-        val body = json.decodeFromString<BalancesResponse>(
-            get(session, "v1/accounts/${account.digits}/balances")
-        )
-        return body.perCurrencyBalances.associate { Currency.getInstance(it.currency) to it.cash }
-    }
+    suspend fun cashBalances(session: Session, account: AccountNumber): Map<Currency, BigDecimal> =
+        get(session, "v1/accounts/${account.digits}/balances") { text ->
+            json.decodeFromString<BalancesResponse>(text).perCurrencyBalances.associate {
+                Currency.getInstance(it.currency) to it.cash
+            }
+        }
 
-    private suspend fun get(session: Session, path: String): String {
+    private suspend fun <T> get(session: Session, path: String, parse: (String) -> T): T {
         val request = Request.Builder()
             .url(session.apiServer.newBuilder().addPathSegments(path).build())
             .header("Authorization", "Bearer ${session.accessToken}")
             .build()
-        return get(request)
+        return get(http, request, parse)
     }
 
-    private suspend fun get(request: Request): String = withContext(Dispatchers.IO) {
-        try {
-            http.newCall(request).execute().use { response ->
-                when {
-                    response.isSuccessful -> response.body.string()
-                    response.code in INVALID_TOKEN_CODES -> throw QuestradeException.InvalidToken()
-                    else -> throw QuestradeException.HttpError(response.code)
-                }
-            }
-        } catch (e: IOException) {
-            throw QuestradeException.NetworkFailure(e)
+    private suspend fun <T> get(client: OkHttpClient, request: Request, parse: (String) -> T): T {
+        val text = fetch(client, request)
+        return try {
+            parse(text)
+        } catch (e: IllegalArgumentException) {
+            // Dropping the cause: parser messages quote the response body, which can hold tokens.
+            throw QuestradeException.UnexpectedResponse()
         }
     }
+
+    private suspend fun fetch(client: OkHttpClient, request: Request): String =
+        withContext(Dispatchers.IO) {
+            try {
+                client.newCall(request).execute().use { response ->
+                    when {
+                        response.isSuccessful -> response.body.string()
+                        response.code in INVALID_TOKEN_CODES ->
+                            throw QuestradeException.InvalidToken()
+                        else -> throw QuestradeException.HttpError(response.code)
+                    }
+                }
+            } catch (e: IOException) {
+                throw QuestradeException.NetworkFailure(e)
+            }
+        }
 
     @Serializable
     private class TokenResponse(
@@ -125,4 +143,6 @@ sealed class QuestradeException(message: String, cause: Throwable? = null) :
 
     class NetworkFailure(cause: IOException) :
         QuestradeException("Could not reach Questrade", cause)
+
+    class UnexpectedResponse : QuestradeException("Questrade sent a response this app can't read")
 }

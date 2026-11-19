@@ -7,6 +7,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import mockwebserver3.MockResponse
 import mockwebserver3.MockWebServer
+import mockwebserver3.SocketEffect
 import okhttp3.OkHttpClient
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -175,6 +176,41 @@ class QuestradeClientTest {
         }
 
         assertTokenAbsent(error, "refresh-1")
+    }
+
+    @Test
+    fun `refresh never resends a refresh token the server may have already used`() {
+        server.enqueue(json("""{"accounts": []}"""))
+        server.enqueue(MockResponse.Builder().onResponseStart(SocketEffect.CloseSocket()).build())
+        server.enqueue(MockResponse.Builder().code(400).build())
+        runBlocking { client.accounts(session()) }
+
+        assertThrows(QuestradeException.NetworkFailure::class.java) {
+            runBlocking { client.refresh("refresh-1") }
+        }
+
+        assertEquals(2, server.requestCount)
+    }
+
+    @Test
+    fun `a malformed token response fails without quoting the tokens`() {
+        server.enqueue(json("""{"access_token": "access-1", "refresh_token": "refresh-2", """))
+
+        val error = assertThrows(QuestradeException.UnexpectedResponse::class.java) {
+            runBlocking { client.refresh("refresh-1") }
+        }
+
+        assertTokenAbsent(error, "access-1")
+        assertTokenAbsent(error, "refresh-2")
+    }
+
+    @Test
+    fun `a balance without a numeric cash value fails as an unexpected response`() {
+        server.enqueue(json("""{"perCurrencyBalances": [{"currency": "CAD", "cash": null}]}"""))
+
+        assertThrows(QuestradeException.UnexpectedResponse::class.java) {
+            runBlocking { client.cashBalances(session(), AccountNumber("26598145")) }
+        }
     }
 
     @Test
