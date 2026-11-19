@@ -6,6 +6,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.fullchee.questradecashoverlay.AccountNumber
 import com.fullchee.questradecashoverlay.questrade.QuestradeException
+import java.io.IOException
 import java.math.BigDecimal
 import java.util.Currency
 import kotlinx.coroutines.channels.Channel
@@ -110,6 +111,21 @@ class CashOverlayTest {
         start { throw QuestradeException.HttpError(503) }
 
         assertEquals(listOf<String?>(null), rendered)
+    }
+
+    @Test
+    fun `a storage failure hides the overlay and the next event tries again`() = runTest {
+        var failing = true
+        start {
+            if (failing) throw IOException("disk")
+            cash
+        }
+        failing = false
+
+        wakeUps.send(Unit)
+        runCurrent()
+
+        assertEquals(listOf(null, "CAD cash: $1,234.56"), rendered)
     }
 
     @Test

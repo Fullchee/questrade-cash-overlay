@@ -1,21 +1,24 @@
 package com.fullchee.questradecashoverlay.overlay
 
 import android.content.res.Resources
+import android.util.Log
 import android.view.accessibility.AccessibilityNodeInfo
 import com.fullchee.questradecashoverlay.AccountNumber
 import com.fullchee.questradecashoverlay.R
-import com.fullchee.questradecashoverlay.questrade.QuestradeException
 import java.math.BigDecimal
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
 import java.util.Currency
 import java.util.Locale
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.withTimeoutOrNull
 
 // The service only hears Questrade's events, so leaving Questrade is noticed by rechecking the active window.
 private val RECHECK_WHILE_SHOWN = 1.seconds
+
+private const val TAG = "CashOverlay"
 
 private val CASH_LABELS = mapOf(
     Currency.getInstance("CAD") to R.string.overlay_cad_cash,
@@ -50,7 +53,11 @@ class CashOverlay(
         val screen = readActiveWindow()?.let(::readOrderScreen) ?: return null
         val cash = try {
             cashOf(screen.account)
-        } catch (e: QuestradeException) {
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            // A crash switches the accessibility service off until someone re-enables it; hide and retry on the next event.
+            Log.w(TAG, "Couldn't read the account's cash", e)
             null
         } ?: return null
         val shown = screen.currency?.let(::listOf) ?: CASH_LABELS.keys
