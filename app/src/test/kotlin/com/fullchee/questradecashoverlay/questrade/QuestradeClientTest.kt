@@ -168,6 +168,15 @@ class QuestradeClientTest {
     }
 
     @Test
+    fun `server errors and rate limits are temporary but other HTTP errors are not`() {
+        val temporary = listOf(404, 429, 500, 503).associateWith {
+            QuestradeException.HttpError(it).isTemporary
+        }
+
+        assertEquals(mapOf(404 to false, 429 to true, 500 to true, 503 to true), temporary)
+    }
+
+    @Test
     fun `an unreachable server fails as a network failure`() {
         server.close()
 

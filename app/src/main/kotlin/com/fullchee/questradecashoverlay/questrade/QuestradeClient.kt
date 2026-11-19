@@ -137,12 +137,20 @@ data class Account(val number: AccountNumber, val type: String)
 /** Messages never include a token. */
 sealed class QuestradeException(message: String, cause: Throwable? = null) :
     Exception(message, cause) {
+    /** Questrade gave no answer about the token, so the same request may work later. */
+    open val isTemporary = false
+
     class InvalidToken : QuestradeException("Questrade rejected the token")
 
-    class HttpError(val code: Int) : QuestradeException("Questrade returned HTTP $code")
+    class HttpError(val code: Int) : QuestradeException("Questrade returned HTTP $code") {
+        // Maintenance windows, outages and rate limits, not a verdict on the request.
+        override val isTemporary = code == 429 || code >= 500
+    }
 
     class NetworkFailure(cause: IOException) :
-        QuestradeException("Could not reach Questrade", cause)
+        QuestradeException("Could not reach Questrade", cause) {
+        override val isTemporary = true
+    }
 
     class UnexpectedResponse : QuestradeException("Questrade sent a response this app can't read")
 }

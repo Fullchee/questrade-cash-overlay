@@ -117,6 +117,26 @@ class LoginStoreTest {
     }
 
     @Test
+    fun `a Questrade outage keeps the login's status for a retry`() = runTest {
+        val store = LoginStore(memoryDataStore())
+        val id = store.add("Mom", "refresh-1")
+
+        runCatching { store.rotate(id) { throw QuestradeException.HttpError(503) } }
+
+        assertEquals(listOf(Login(id, "Mom", LoginStatus.Ok)), store.logins.first())
+    }
+
+    @Test
+    fun `a client HTTP error leaves the login needing reconnecting`() = runTest {
+        val store = LoginStore(memoryDataStore())
+        val id = store.add("Mom", "refresh-1")
+
+        runCatching { store.rotate(id) { throw QuestradeException.HttpError(404) } }
+
+        assertEquals(listOf(Login(id, "Mom", LoginStatus.NeedsReconnecting)), store.logins.first())
+    }
+
+    @Test
     fun `two rotations of the same login run one after the other`() = runTest {
         val store = LoginStore(memoryDataStore())
         val id = store.add("Mom", "refresh-1")

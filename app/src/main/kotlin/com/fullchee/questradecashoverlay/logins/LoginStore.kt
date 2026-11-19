@@ -43,7 +43,7 @@ class LoginStore internal constructor(private val dataStore: DataStore<StoredLog
      * Exchanges the login's refresh token with [refresh] and stores the new one before returning the session.
      * The login reads as [LoginStatus.NeedsReconnecting] from before the exchange until the new token is saved,
      * so a failure or crash at any point leaves it marked broken rather than holding a spent token that looks valid.
-     * A [QuestradeException.NetworkFailure] is the exception: it restores the login's earlier status for a retry.
+     * A [QuestradeException.isTemporary] failure is the exception: it restores the login's earlier status for a retry.
      */
     suspend fun rotate(id: String, refresh: suspend (refreshToken: String) -> Session): Session =
         rotation.withLock {
@@ -51,9 +51,9 @@ class LoginStore internal constructor(private val dataStore: DataStore<StoredLog
             update(id) { it.copy(status = LoginStatus.NeedsReconnecting) }
             val session = try {
                 refresh(spending.refreshToken)
-            } catch (e: QuestradeException.NetworkFailure) {
+            } catch (e: QuestradeException) {
                 // Whether the server spent the token is unknown; the caller's retry finds out and marks it then.
-                update(id) { it.copy(status = spending.status) }
+                if (e.isTemporary) update(id) { it.copy(status = spending.status) }
                 throw e
             }
             // The old token is spent now, so a caller cancelling must not drop its only replacement.

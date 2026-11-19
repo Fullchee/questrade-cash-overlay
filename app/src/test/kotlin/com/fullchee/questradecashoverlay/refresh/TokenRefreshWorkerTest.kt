@@ -95,6 +95,17 @@ class TokenRefreshWorkerTest {
     }
 
     @Test
+    fun `a Questrade outage retries later without marking or notifying`() = runTest {
+        val mom = store.add("Mom", "mom-1")
+
+        val result = runWorker { throw QuestradeException.HttpError(503) }
+
+        assertEquals(ListenableWorker.Result.retry(), result)
+        assertEquals(listOf(Login(mom, "Mom", LoginStatus.Ok)), store.logins.first())
+        assertEquals(0, notifications().size)
+    }
+
+    @Test
     fun `tapping the notification opens the app`() = runTest {
         store.add("Mom", "mom-1")
 

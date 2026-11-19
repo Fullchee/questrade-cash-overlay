@@ -53,18 +53,16 @@ class TokenRefreshWorker(
     )
 
     override suspend fun doWork(): Result {
-        var offline = false
+        var retryLater = false
         for (login in store.logins.first()) {
             try {
                 store.rotate(login.id, refresh)
-            } catch (e: QuestradeException.NetworkFailure) {
-                offline = true
             } catch (e: QuestradeException) {
-                notifyNeedsReconnecting(login)
+                if (e.isTemporary) retryLater = true else notifyNeedsReconnecting(login)
             }
         }
         // WorkManager's backoff reruns every login; rotating a fresh token again is harmless.
-        return if (offline) Result.retry() else Result.success()
+        return if (retryLater) Result.retry() else Result.success()
     }
 
     private fun notifyNeedsReconnecting(login: Login) {
