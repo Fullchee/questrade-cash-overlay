@@ -14,7 +14,7 @@ Scope: [intent/questrade-cash-overlay.md](intent/questrade-cash-overlay.md). Eac
 | # | Step | Done when |
 |---|---|---|
 | 0 | **Spike: read Questrade's screen.** Connect the phone with `adb`, open the order screen, run `adb shell uiautomator dump`. Record the package name and the node holding `Cash - <number>`. Do the same with the account picker open. | The account number is readable from the view tree. Fake the number, then save the dump as a test fixture |
-| 1 | **Scaffold.** Gradle project, Compose app, lint (ktlint), `just test` and `just install` recipes, pre-push hook running tests | `./gradlew test` passes on an empty test; the APK installs on the emulator |
+| 1 | **Scaffold.** Gradle project, Compose app, lint (ktlint), `just test`, `just apk` and `just emulator` recipes, pre-push hook running tests | `./gradlew test` passes on an empty test; the APK installs on the emulator |
 | 2 | **Account matcher (pure Kotlin).** Parse `Cash - 12345678`-style text into an account number; return none for any other text | Unit tests cover each account type label and non-matches |
 | 3 | **Questrade client.** Refresh-token exchange, `GET /v1/accounts`, `GET /v1/accounts/{id}/balances` | MockWebServer tests for success, 401, expired token, and network failure |
 | 4 | **Token store.** Encrypted store holding one refresh token per login. Save the new refresh token *before* using the access token: each token works once | Tests: rotation persists; a crash between exchange and save can't lose the token |
