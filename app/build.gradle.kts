@@ -41,6 +41,8 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.datastore)
+    implementation(libs.tink.android)
 
     testImplementation(platform(libs.compose.bom))
     testImplementation(libs.junit)
