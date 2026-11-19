@@ -3,6 +3,7 @@ package com.fullchee.questradecashoverlay.overlay
 import android.os.SystemClock
 import com.fullchee.questradecashoverlay.AccountNumber
 import com.fullchee.questradecashoverlay.logins.LoginId
+import com.fullchee.questradecashoverlay.logins.LoginStatus
 import com.fullchee.questradecashoverlay.logins.LoginStore
 import com.fullchee.questradecashoverlay.questrade.QuestradeClient
 import com.fullchee.questradecashoverlay.questrade.QuestradeException
@@ -50,6 +51,9 @@ class CashBalances(
         login: LoginId,
         account: AccountNumber
     ): Map<Currency, BigDecimal> {
+        // A rejected token stays rejected until reconnected; resending it on every screen event spams Questrade.
+        val status = store.logins.first().single { it.id == login }.status
+        if (status == LoginStatus.NeedsReconnecting) throw QuestradeException.InvalidToken()
         val session = store.rotate(login, client::refresh)
         sessions[login] = session
         return client.cashBalances(session, account)

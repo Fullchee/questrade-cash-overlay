@@ -118,6 +118,19 @@ class CashBalancesTest {
     }
 
     @Test
+    fun `a login that needs reconnecting is not refreshed again`() = runTest {
+        server.enqueue(MockResponse.Builder().code(400).build())
+        assertThrows(QuestradeException.InvalidToken::class.java) {
+            runBlocking { balances.of(tfsa) }
+        }
+
+        assertThrows(QuestradeException.InvalidToken::class.java) {
+            runBlocking { balances.of(tfsa) }
+        }
+        assertEquals(1, server.requestCount)
+    }
+
+    @Test
     fun `an account no login can read has no cash and makes no request`() = runTest {
         assertNull(balances.of(AccountNumber("99999999")))
         assertEquals(0, server.requestCount)
