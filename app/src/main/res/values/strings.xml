@@ -44,7 +44,7 @@
     <string name="menu_language">Language · 语言</string>
     <string name="menu_cancel">Cancel</string>
     <string name="token_steps_title">Get a refresh token</string>
-    <string name="token_steps_1">1. Sign in to Questrade in a browser. Tap Open Questrade below to go straight to the API centre.</string>
+    <string name="token_steps_1">1. Open the API centre at %1$s, or tap Open Questrade below. Sign in if asked.</string>
     <string name="token_steps_2">2. If asked, tap \"Activate API\" and accept the terms.</string>
     <string name="token_steps_3">3. Tap \"Register a personal app\". Allow account data only, not trading. Any name works.</string>
     <string name="token_steps_4">4. Under the new app, tap \"Generate new token\". If it isn\'t there, tap \"New device\" first.</string>

@@ -91,6 +91,15 @@ class MainActivityTest {
     }
 
     @Test
+    fun theRefreshTokenStepsShowTheApiCentreUrl() {
+        launchPastOnboarding()
+
+        openMenuItem("Get a refresh token")
+
+        composeRule.onNodeWithText(QUESTRADE_API_CENTRE, substring = true).assertIsDisplayed()
+    }
+
+    @Test
     fun choosingALanguageFromTheMenuSetsTheAppsLanguage() {
         launchPastOnboarding()
 

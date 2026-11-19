@@ -44,7 +44,7 @@
     <string name="menu_language">语言 · Language</string>
     <string name="menu_cancel">取消</string>
     <string name="token_steps_title">获取刷新令牌</string>
-    <string name="token_steps_1">1. 在浏览器中登录 Questrade。点按下方的“打开 Questrade”可直接进入 API 中心。</string>
+    <string name="token_steps_1">1. 打开 API 中心：%1$s，或点按下方的“打开 Questrade”。如有提示，请登录。</string>
     <string name="token_steps_2">2. 如有提示，点按“Activate API”并接受条款。</string>
     <string name="token_steps_3">3. 点按“Register a personal app”。只允许读取账户数据，不要允许交易。名称随意。</string>
     <string name="token_steps_4">4. 在新应用下点按“Generate new token”。如果看不到，请先点按“New device”。</string>
