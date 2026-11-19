@@ -174,6 +174,19 @@ class LoginStoreTest {
     }
 
     @Test
+    fun `reconnect replaces a broken login's token so the next rotation spends the new one`() =
+        runTest {
+            val store = LoginStore(memoryDataStore())
+            val id = store.add("Mom", "refresh-1")
+            runCatching { store.rotate(id) { throw QuestradeException.InvalidToken() } }
+
+            store.reconnect(id, "pasted")
+
+            assertEquals("pasted", store.rotate(id) { session(refreshToken = it) }.refreshToken)
+            assertEquals(listOf(Login(id, "Mom", LoginStatus.Ok)), store.logins.first())
+        }
+
+    @Test
     fun `remove drops the login and keeps the others`() = runTest {
         val store = LoginStore(memoryDataStore())
         val mom = store.add("Mom", "refresh-mom")

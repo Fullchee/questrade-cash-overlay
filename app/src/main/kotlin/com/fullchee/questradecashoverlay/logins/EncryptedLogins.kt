@@ -5,6 +5,7 @@ import androidx.datastore.core.CorruptionException
 import androidx.datastore.core.DataStoreFactory
 import androidx.datastore.core.Serializer
 import androidx.datastore.dataStoreFile
+import com.fullchee.questradecashoverlay.CashOverlayApp
 import com.google.crypto.tink.Aead
 import com.google.crypto.tink.KeyTemplates
 import com.google.crypto.tink.RegistryConfiguration
@@ -23,15 +24,11 @@ private const val MASTER_KEY_URI = "android-keystore://logins_master_key"
 // Binds the ciphertext to this file, so a blob encrypted for another purpose never decrypts here.
 private val ASSOCIATED_DATA = LOGINS_FILE.encodeToByteArray()
 
-@Volatile
-private var appLoginStore: LoginStore? = null
-
 /** The app's one store: DataStore refuses two instances on the same file in a process. */
-fun loginStore(context: Context): LoginStore = appLoginStore ?: synchronized(LoginStore::class) {
-    appLoginStore ?: createLoginStore(context.applicationContext).also { appLoginStore = it }
-}
+fun loginStore(context: Context): LoginStore =
+    (context.applicationContext as CashOverlayApp).loginStore
 
-private fun createLoginStore(context: Context): LoginStore {
+internal fun createLoginStore(context: Context): LoginStore {
     val dataStore = DataStoreFactory.create(
         serializer = EncryptedLoginsSerializer(keystoreAead(context)),
         produceFile = { context.dataStoreFile(LOGINS_FILE) }

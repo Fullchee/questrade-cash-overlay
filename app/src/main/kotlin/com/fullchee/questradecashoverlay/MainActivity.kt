@@ -3,26 +3,27 @@ package com.fullchee.questradecashoverlay
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
+import com.fullchee.questradecashoverlay.logins.LoginsScreen
+import com.fullchee.questradecashoverlay.logins.loginStore
 import com.fullchee.questradecashoverlay.onboarding.OnboardingScreen
 import com.fullchee.questradecashoverlay.onboarding.SetupChecks
 import com.fullchee.questradecashoverlay.onboarding.settingsIntent
+import com.fullchee.questradecashoverlay.questrade.QuestradeClient
+import okhttp3.OkHttpClient
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val checks = SetupChecks(this)
+        val questrade = QuestradeClient(OkHttpClient())
         setContent {
             MaterialTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
@@ -37,9 +38,7 @@ class MainActivity : ComponentActivity() {
                             }
                         )
                     } else {
-                        Box(contentAlignment = Alignment.Center) {
-                            Text(stringResource(R.string.app_name))
-                        }
+                        LoginsScreen(loginStore(this), questrade)
                     }
                 }
             }

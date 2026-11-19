@@ -21,4 +21,20 @@
     <string name="login_alerts_channel">Logins needing reconnecting</string>
     <string name="login_needs_reconnecting_title">%1$s needs reconnecting</string>
     <string name="login_needs_reconnecting_body">Questrade rejected this login\'s token. Tap to paste a new one.</string>
+    <string name="logins_add">Add login</string>
+    <string name="logins_name">Name</string>
+    <string name="logins_refresh_token">Refresh token</string>
+    <string name="logins_save">Save</string>
+    <string name="logins_cancel">Cancel</string>
+    <string name="logins_check">Check</string>
+    <string name="logins_checking">Checking with Questrade…</string>
+    <string name="logins_paste_new_token">Paste new token</string>
+    <string name="logins_remove">Remove</string>
+    <string name="logins_remove_title">Remove %1$s?</string>
+    <string name="logins_remove_confirm">Yes, remove</string>
+    <string name="logins_status_ok">OK</string>
+    <string name="logins_status_needs_reconnecting">Needs reconnecting</string>
+    <string name="logins_error_invalid_token">Questrade rejected this token. Generate a new one and paste it here.</string>
+    <string name="logins_error_network">Couldn\'t reach Questrade. Check the connection and try again.</string>
+    <string name="logins_error_questrade">Questrade sent an error. Try again later.</string>
 </resources>

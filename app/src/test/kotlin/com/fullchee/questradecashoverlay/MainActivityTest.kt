@@ -55,11 +55,11 @@ class MainActivityTest {
     }
 
     @Test
-    fun finishedOnboardingSkipsStraightToTheApp() {
+    fun finishedOnboardingSkipsStraightToTheLogins() {
         SetupChecks(app).markOnboardingFinished()
 
         ActivityScenario.launch(MainActivity::class.java)
 
-        composeRule.onNodeWithText("Questrade Cash Overlay").assertIsDisplayed()
+        composeRule.onNodeWithText("Add login").assertIsDisplayed()
     }
 }

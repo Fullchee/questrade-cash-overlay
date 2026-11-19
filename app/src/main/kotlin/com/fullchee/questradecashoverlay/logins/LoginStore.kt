@@ -1,6 +1,7 @@
 package com.fullchee.questradecashoverlay.logins
 
 import androidx.datastore.core.DataStore
+import com.fullchee.questradecashoverlay.AccountNumber
 import com.fullchee.questradecashoverlay.questrade.QuestradeException
 import com.fullchee.questradecashoverlay.questrade.Session
 import java.util.UUID
@@ -19,8 +20,12 @@ class LoginStore internal constructor(private val dataStore: DataStore<StoredLog
     private val rotation = Mutex()
 
     val logins: Flow<List<Login>> = dataStore.data.map { stored ->
-        stored.logins.map { Login(it.id, it.name, it.status) }
+        stored.logins.map { login ->
+            Login(login.id, login.name, login.status, login.accounts.map(::AccountNumber))
+        }
     }
+
+    val accountIndex: Flow<AccountIndex> = logins.map(::AccountIndex)
 
     /** Returns the new login's ID. */
     suspend fun add(name: String, refreshToken: String): String {
@@ -32,6 +37,15 @@ class LoginStore internal constructor(private val dataStore: DataStore<StoredLog
     }
 
     suspend fun rename(id: String, name: String) = update(id) { it.copy(name = name) }
+
+    /** Stores a freshly pasted token. The status stays as it is until a [rotate] proves the token works. */
+    suspend fun reconnect(id: String, refreshToken: String) = rotation.withLock {
+        // Under the lock: a rotation in flight would otherwise overwrite the pasted token with its own.
+        update(id) { it.copy(refreshToken = refreshToken) }
+    }
+
+    suspend fun setAccounts(id: String, accounts: List<AccountNumber>) =
+        update(id) { login -> login.copy(accounts = accounts.map { it.digits }) }
 
     suspend fun remove(id: String) {
         dataStore.updateData { stored ->
@@ -70,7 +84,12 @@ class LoginStore internal constructor(private val dataStore: DataStore<StoredLog
     }
 }
 
-data class Login(val id: String, val name: String, val status: LoginStatus)
+data class Login(
+    val id: String,
+    val name: String,
+    val status: LoginStatus,
+    val accounts: List<AccountNumber> = emptyList()
+)
 
 enum class LoginStatus { Ok, NeedsReconnecting }
 
@@ -83,5 +102,7 @@ internal data class StoredLogin(
     val id: String,
     val name: String,
     val refreshToken: String,
-    val status: LoginStatus
+    val status: LoginStatus,
+    // Logins saved before accounts were stored have none until their next check.
+    val accounts: List<String> = emptyList()
 )
