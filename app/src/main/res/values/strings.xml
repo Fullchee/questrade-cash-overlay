@@ -18,4 +18,7 @@
     <string name="onboarding_back">Back</string>
     <string name="onboarding_next">Next</string>
     <string name="onboarding_finish">Finish</string>
+    <string name="login_alerts_channel">Logins needing reconnecting</string>
+    <string name="login_needs_reconnecting_title">%1$s needs reconnecting</string>
+    <string name="login_needs_reconnecting_body">Questrade rejected this login\'s token. Tap to paste a new one.</string>
 </resources>

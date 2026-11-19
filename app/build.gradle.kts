@@ -43,6 +43,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.datastore)
     implementation(libs.tink.android)
+    implementation(libs.work.runtime)
 
     testImplementation(platform(libs.compose.bom))
     testImplementation(libs.junit)
@@ -51,5 +52,6 @@ dependencies {
     testImplementation(libs.okhttp.mockwebserver)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.compose.ui.test.junit4)
+    testImplementation(libs.work.testing)
     debugImplementation(libs.compose.ui.test.manifest)
 }

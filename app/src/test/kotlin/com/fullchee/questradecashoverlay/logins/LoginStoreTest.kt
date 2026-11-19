@@ -94,11 +94,26 @@ class LoginStoreTest {
     fun `a login needing reconnecting is ok again once a rotation succeeds`() = runTest {
         val store = LoginStore(memoryDataStore())
         val id = store.add("Mom", "refresh-1")
-        runCatching { store.rotate(id) { throw QuestradeException.NetworkFailure(IOException()) } }
+        runCatching { store.rotate(id) { throw QuestradeException.InvalidToken() } }
 
         store.rotate(id) { session(refreshToken = "refresh-2") }
 
         assertEquals(listOf(Login(id, "Mom", LoginStatus.Ok)), store.logins.first())
+    }
+
+    @Test
+    fun `a network failure keeps the login's status and token for a retry`() = runTest {
+        val store = LoginStore(memoryDataStore())
+        val id = store.add("Mom", "refresh-1")
+
+        assertThrows(QuestradeException.NetworkFailure::class.java) {
+            runBlocking {
+                store.rotate(id) { throw QuestradeException.NetworkFailure(IOException()) }
+            }
+        }
+
+        assertEquals(listOf(Login(id, "Mom", LoginStatus.Ok)), store.logins.first())
+        assertEquals("refresh-1", store.rotate(id) { session(refreshToken = it) }.refreshToken)
     }
 
     @Test

@@ -1,6 +1,7 @@
 package com.fullchee.questradecashoverlay.logins
 
 import androidx.datastore.core.DataStore
+import com.fullchee.questradecashoverlay.questrade.QuestradeException
 import com.fullchee.questradecashoverlay.questrade.Session
 import java.util.UUID
 import kotlinx.coroutines.NonCancellable
@@ -42,12 +43,19 @@ class LoginStore internal constructor(private val dataStore: DataStore<StoredLog
      * Exchanges the login's refresh token with [refresh] and stores the new one before returning the session.
      * The login reads as [LoginStatus.NeedsReconnecting] from before the exchange until the new token is saved,
      * so a failure or crash at any point leaves it marked broken rather than holding a spent token that looks valid.
+     * A [QuestradeException.NetworkFailure] is the exception: it restores the login's earlier status for a retry.
      */
     suspend fun rotate(id: String, refresh: suspend (refreshToken: String) -> Session): Session =
         rotation.withLock {
             val spending = dataStore.data.first().logins.single { it.id == id }
             update(id) { it.copy(status = LoginStatus.NeedsReconnecting) }
-            val session = refresh(spending.refreshToken)
+            val session = try {
+                refresh(spending.refreshToken)
+            } catch (e: QuestradeException.NetworkFailure) {
+                // Whether the server spent the token is unknown; the caller's retry finds out and marks it then.
+                update(id) { it.copy(status = spending.status) }
+                throw e
+            }
             // The old token is spent now, so a caller cancelling must not drop its only replacement.
             withContext(NonCancellable) {
                 update(id) { it.copy(refreshToken = session.refreshToken, status = LoginStatus.Ok) }
