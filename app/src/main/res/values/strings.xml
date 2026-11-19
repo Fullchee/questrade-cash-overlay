@@ -1,4 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Questrade Cash Overlay</string>
+    <string name="accessibility_service_description">Reads the selected account on Questrade\'s order screen to show its cash.</string>
+    <string name="onboarding_restricted_settings_title">Allow restricted settings</string>
+    <string name="onboarding_restricted_settings_body">In App info, open the ⋮ menu and tap \"Allow restricted settings\". Android needs this before it lets you turn on the next step.</string>
+    <string name="onboarding_accessibility_title">Accessibility</string>
+    <string name="onboarding_accessibility_body">Turn on Questrade Cash Overlay so it can read the account on Questrade\'s order screen.</string>
+    <string name="onboarding_notifications_title">Notifications</string>
+    <string name="onboarding_notifications_body">Allow notifications so the app can tell you when a login needs reconnecting.</string>
+    <string name="onboarding_battery_title">Battery</string>
+    <string name="onboarding_battery_body">Set battery use to \"No restrictions\" so HyperOS doesn\'t stop the daily refresh.</string>
+    <string name="onboarding_autostart_title">Autostart</string>
+    <string name="onboarding_autostart_body">Turn on Autostart for this app in Security, then tick the box below.</string>
+    <string name="onboarding_autostart_ticked">I turned on Autostart</string>
+    <string name="onboarding_open_settings">Open settings</string>
+    <string name="onboarding_done">✓ Done</string>
+    <string name="onboarding_back">Back</string>
+    <string name="onboarding_next">Next</string>
+    <string name="onboarding_finish">Finish</string>
 </resources>
