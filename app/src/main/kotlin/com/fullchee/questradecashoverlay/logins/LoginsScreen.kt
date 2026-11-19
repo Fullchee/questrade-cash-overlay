@@ -13,6 +13,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -25,7 +27,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -43,13 +47,14 @@ private sealed interface TokenForm {
 }
 
 @Composable
-fun LoginsScreen(store: LoginStore, questrade: QuestradeClient, openSetup: () -> Unit) {
+fun LoginsScreen(store: LoginStore, questrade: QuestradeClient, openMenu: () -> Unit) {
     val logins by store.logins.collectAsState(initial = emptyList())
     val scope = rememberCoroutineScope()
     var form by remember { mutableStateOf<TokenForm?>(null) }
     var removing by remember { mutableStateOf<Login?>(null) }
     var checking by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<Int?>(null) }
+    var showingTokenSteps by remember { mutableStateOf(false) }
 
     fun run(action: suspend () -> Unit) {
         checking = true
@@ -70,7 +75,12 @@ fun LoginsScreen(store: LoginStore, questrade: QuestradeClient, openSetup: () ->
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Text(stringResource(R.string.app_name), style = MaterialTheme.typography.headlineMedium)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = openMenu) {
+                Icon(painterResource(R.drawable.ic_menu), stringResource(R.string.menu_open))
+            }
+            Text(stringResource(R.string.app_name), style = MaterialTheme.typography.headlineMedium)
+        }
         logins.forEach { login ->
             LoginRow(
                 login = login,
@@ -90,6 +100,7 @@ fun LoginsScreen(store: LoginStore, questrade: QuestradeClient, openSetup: () ->
                 form = current,
                 enabled = !checking,
                 onCancel = { form = null },
+                onHelp = { showingTokenSteps = true },
                 onSave = { name, token ->
                     run {
                         save(store, questrade, current, name, token, onTokenKept = { form = null })
@@ -97,8 +108,9 @@ fun LoginsScreen(store: LoginStore, questrade: QuestradeClient, openSetup: () ->
                 }
             )
         }
-        TextButton(onClick = openSetup) { Text(stringResource(R.string.logins_setup_steps)) }
     }
+
+    if (showingTokenSteps) RefreshTokenStepsDialog(onDismiss = { showingTokenSteps = false })
 
     removing?.let { login ->
         AlertDialog(
@@ -160,6 +172,7 @@ private fun TokenEditor(
     form: TokenForm,
     enabled: Boolean,
     onCancel: () -> Unit,
+    onHelp: () -> Unit,
     onSave: (name: String, token: String) -> Unit
 ) {
     var name by remember(form) {
@@ -186,6 +199,7 @@ private fun TokenEditor(
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             modifier = Modifier.fillMaxWidth()
         )
+        TextButton(onClick = onHelp) { Text(stringResource(R.string.logins_token_help)) }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Button(
                 onClick = {

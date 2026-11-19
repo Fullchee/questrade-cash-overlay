@@ -43,7 +43,7 @@ class LoginsScreenTest {
             LoginsScreen(
                 store,
                 QuestradeClient(OkHttpClient(), loginServer = server.url("/")),
-                openSetup = {}
+                openMenu = {}
             )
         }
     }
@@ -141,6 +141,17 @@ class LoginsScreenTest {
 
         composeRule.onAllNodesWithText("Save").assertCountEquals(0)
         assertEquals(emptyList<Login>(), runBlocking { store.logins.first() })
+    }
+
+    @Test
+    fun theTokenFormShowsHowToGetARefreshToken() {
+        composeRule.onNodeWithText("Add login").performClick()
+
+        composeRule.onNodeWithText("How do I get a token?").performClick()
+
+        composeRule.onNodeWithText("Get a refresh token").assertIsDisplayed()
+        composeRule.onNodeWithText("Close").performClick()
+        composeRule.onAllNodesWithText("Get a refresh token").assertCountEquals(0)
     }
 
     @Test
