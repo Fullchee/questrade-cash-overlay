@@ -92,14 +92,7 @@ fun LoginsScreen(store: LoginStore, questrade: QuestradeClient) {
                 onCancel = { form = null },
                 onSave = { name, token ->
                     run {
-                        when (current) {
-                            TokenForm.Adding -> add(store, questrade, name, token)
-                            is TokenForm.Reconnecting -> {
-                                store.reconnect(current.login.id, token)
-                                check(store, questrade, current.login.id)
-                            }
-                        }
-                        form = null
+                        save(store, questrade, current, name, token, onTokenKept = { form = null })
                     }
                 }
             )
@@ -214,20 +207,34 @@ private suspend fun check(store: LoginStore, questrade: QuestradeClient, id: Str
     store.setAccounts(id, questrade.accounts(session).map { it.number })
 }
 
-/** A login whose first check fails is dropped: its token never worked, so nothing is lost. */
-private suspend fun add(
+/**
+ * Stores the pasted token and checks it. Calls [onTokenKept] once the login holds a token that may be live,
+ * because Questrade may have spent the pasted one: saving the form again would overwrite the replacement.
+ */
+private suspend fun save(
     store: LoginStore,
     questrade: QuestradeClient,
+    form: TokenForm,
     name: String,
-    token: String
+    token: String,
+    onTokenKept: () -> Unit
 ) {
-    val id = store.add(name, token)
-    try {
-        check(store, questrade, id)
+    val id = when (form) {
+        TokenForm.Adding -> store.add(name, token)
+        is TokenForm.Reconnecting -> form.login.id.also { store.reconnect(it, token) }
+    }
+    val session = try {
+        store.rotate(id, questrade::refresh)
     } catch (e: QuestradeException) {
-        store.remove(id)
+        when {
+            e.isTemporary -> onTokenKept()
+            // Questrade answered and the token never worked for this login, so dropping it loses nothing.
+            form == TokenForm.Adding -> store.remove(id)
+        }
         throw e
     }
+    onTokenKept()
+    store.setAccounts(id, questrade.accounts(session).map { it.number })
 }
 
 @StringRes

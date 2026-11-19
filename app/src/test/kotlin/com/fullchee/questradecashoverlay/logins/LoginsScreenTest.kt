@@ -14,6 +14,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.fullchee.questradecashoverlay.AccountNumber
 import com.fullchee.questradecashoverlay.questrade.QuestradeClient
 import com.fullchee.questradecashoverlay.questrade.QuestradeException
+import com.fullchee.questradecashoverlay.questrade.Session
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import mockwebserver3.MockResponse
@@ -72,16 +73,40 @@ class LoginsScreenTest {
 
         waitForText(REJECTED)
         composeRule.onAllNodesWithText("refresh-bad").assertCountEquals(0)
+        composeRule.onNodeWithText("Save").assertIsDisplayed()
         assertEquals(emptyList<Login>(), runBlocking { store.logins.first() })
     }
 
     @Test
-    fun aNetworkFailureWhileAddingSaysQuestradeIsUnreachable() {
+    fun aNetworkFailureWhileAddingKeepsTheLoginForALaterCheck() {
         server.enqueue(MockResponse.Builder().onResponseStart(SocketEffect.CloseSocket()).build())
 
         addLogin("Mom", "refresh-1")
 
         waitForText("Couldn't reach Questrade. Check the connection and try again.")
+        composeRule.onAllNodesWithText("Save").assertCountEquals(0)
+        assertEquals(listOf("Mom"), runBlocking { store.logins.first() }.map { it.name })
+    }
+
+    @Test
+    fun failingToLoadAccountsAfterTheRotationKeepsTheNewToken() {
+        enqueueRotatedToken()
+        server.enqueue(MockResponse.Builder().code(500).build())
+
+        addLogin("Mom", "refresh-1")
+
+        waitForText("Questrade sent an error. Try again later.")
+        composeRule.onAllNodesWithText("Save").assertCountEquals(0)
+        val login = runBlocking { store.logins.first() }.single()
+        assertEquals(LoginStatus.Ok, login.status)
+        var stored = ""
+        runBlocking {
+            store.rotate(login.id) {
+                stored = it
+                Session("access", server.url("/"), it)
+            }
+        }
+        assertEquals("refresh-next", stored)
     }
 
     @Test
@@ -132,6 +157,21 @@ class LoginsScreenTest {
                 store.accountIndex.first()
             }.loginFor(AccountNumber("33333333"))
         )
+    }
+
+    @Test
+    fun aRejectedPastedTokenKeepsTheLoginAndTheForm() {
+        brokenLogin("Mom")
+        waitForText("Needs reconnecting")
+        server.enqueue(MockResponse.Builder().code(400).build())
+
+        composeRule.onNodeWithText("Paste new token").performClick()
+        composeRule.onNodeWithText("Refresh token").performTextInput("refresh-bad")
+        composeRule.onNodeWithText("Save").performClick()
+
+        waitForText(REJECTED)
+        composeRule.onNodeWithText("Save").assertIsDisplayed()
+        assertEquals(listOf("Mom"), runBlocking { store.logins.first() }.map { it.name })
     }
 
     @Test
@@ -193,6 +233,12 @@ class LoginsScreenTest {
     }
 
     private fun enqueueWorkingToken(accounts: List<String>) {
+        enqueueRotatedToken()
+        val numbers = accounts.joinToString { """{"type": "Margin", "number": "$it"}""" }
+        server.enqueue(json("""{"accounts": [$numbers]}"""))
+    }
+
+    private fun enqueueRotatedToken() {
         server.enqueue(
             json(
                 """{"access_token": "access", "refresh_token": "refresh-next", "api_server": "${server.url(
@@ -200,8 +246,6 @@ class LoginsScreenTest {
                 )}"}"""
             )
         )
-        val numbers = accounts.joinToString { """{"type": "Margin", "number": "$it"}""" }
-        server.enqueue(json("""{"accounts": [$numbers]}"""))
     }
 
     private fun waitForText(text: String) {
