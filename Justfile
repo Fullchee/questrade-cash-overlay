@@ -1,9 +1,9 @@
 app_id := "com.fullchee.questradecashoverlay"
 apk := "app/build/outputs/apk/debug/app-debug.apk"
 
-# Unit tests and ktlint
+# Unit tests, ktlint and Android lint
 test:
-    ./gradlew test ktlintCheck
+    ./gradlew test ktlintCheck lint
 
 # Build the debug APK, install it on the running emulator and launch it
 install:

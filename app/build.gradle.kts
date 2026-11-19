@@ -25,6 +25,11 @@ android {
         compose = true
     }
 
+    lint {
+        // Every English string needs its Simplified Chinese entry, the language the app runs in.
+        error += "MissingTranslation"
+    }
+
     testOptions {
         unitTests.isIncludeAndroidResources = true
         unitTests.all {
@@ -44,6 +49,8 @@ dependencies {
     implementation(libs.datastore)
     implementation(libs.tink.android)
     implementation(libs.work.runtime)
+
+    lintChecks(project(":lint-checks"))
 
     testImplementation(platform(libs.compose.bom))
     testImplementation(libs.junit)

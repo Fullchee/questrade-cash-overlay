@@ -21,3 +21,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "questrade-cash-overlay"
 include(":app")
+include(":lint-checks")
