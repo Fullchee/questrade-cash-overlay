@@ -24,6 +24,11 @@ emulator: apk
     adb -e install -r "{{apk}}"
     adb -e shell am start -n "{{app_id}}/.MainActivity"
 
+# Build, then install and launch the debug app on the plugged-in phone
+phone: apk
+    adb -d install -r "{{apk}}"
+    adb -d shell am start -n "{{app_id}}/.MainActivity"
+
 # Run the tests before every push
 hooks:
     git config core.hooksPath .githooks
