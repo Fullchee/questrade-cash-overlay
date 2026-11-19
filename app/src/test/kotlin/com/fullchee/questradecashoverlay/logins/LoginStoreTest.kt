@@ -4,6 +4,8 @@ import com.fullchee.questradecashoverlay.questrade.QuestradeException
 import com.fullchee.questradecashoverlay.questrade.Session
 import java.io.IOException
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
@@ -51,6 +53,22 @@ class LoginStoreTest {
                 store.logins.first()
             )
         }
+
+    @Test
+    fun `a caller cancelled during the exchange still saves the new token`() = runTest {
+        val store = LoginStore(memoryDataStore())
+        val id = store.add("Mom", "refresh-1")
+
+        launch {
+            store.rotate(id) {
+                currentCoroutineContext().cancel()
+                session(refreshToken = "refresh-2")
+            }
+        }.join()
+
+        assertEquals(listOf(Login(id, "Mom", LoginStatus.Ok)), store.logins.first())
+        assertEquals("refresh-2", store.rotate(id) { session(refreshToken = it) }.refreshToken)
+    }
 
     @Test
     fun `a failed refresh marks only that login as needing reconnecting`() = runTest {

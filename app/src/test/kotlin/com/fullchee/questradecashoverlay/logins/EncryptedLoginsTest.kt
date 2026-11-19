@@ -6,6 +6,7 @@ import androidx.datastore.core.CorruptionException
 import androidx.datastore.dataStoreFile
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.fullchee.questradecashoverlay.R
 import com.fullchee.questradecashoverlay.questrade.Session
 import com.google.crypto.tink.Aead
 import com.google.crypto.tink.KeysetHandle
@@ -24,6 +25,7 @@ import org.junit.Assert.assertSame
 import org.junit.Assert.assertThrows
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.xmlpull.v1.XmlPullParser
 
 @RunWith(AndroidJUnit4::class)
 class EncryptedLoginsTest {
@@ -76,6 +78,21 @@ class EncryptedLoginsTest {
         val context = ApplicationProvider.getApplicationContext<Context>()
 
         assertEquals(0, context.applicationInfo.flags and ApplicationInfo.FLAG_ALLOW_BACKUP)
+    }
+
+    @Test
+    fun `device transfers and cloud backups skip the logins file and its keyset`() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val parser = context.resources.getXml(R.xml.data_extraction_rules)
+        val excluded = mutableListOf<String>()
+        while (parser.next() != XmlPullParser.END_DOCUMENT) {
+            if (parser.eventType == XmlPullParser.START_TAG && parser.name == "exclude") {
+                excluded += parser.getAttributeValue(null, "path")
+            }
+        }
+
+        val bothFiles = listOf("datastore/$LOGINS_FILE", "logins_keyset_prefs.xml")
+        assertEquals(bothFiles + bothFiles, excluded)
     }
 
     private fun newAead(): Aead {

@@ -3,11 +3,13 @@ package com.fullchee.questradecashoverlay.logins
 import androidx.datastore.core.DataStore
 import com.fullchee.questradecashoverlay.questrade.Session
 import java.util.UUID
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 
 /** Holds one Questrade refresh token per login. Tokens never leave the store except through [rotate]. */
@@ -46,7 +48,10 @@ class LoginStore internal constructor(private val dataStore: DataStore<StoredLog
             val spending = dataStore.data.first().logins.single { it.id == id }
             update(id) { it.copy(status = LoginStatus.NeedsReconnecting) }
             val session = refresh(spending.refreshToken)
-            update(id) { it.copy(refreshToken = session.refreshToken, status = LoginStatus.Ok) }
+            // The old token is spent now, so a caller cancelling must not drop its only replacement.
+            withContext(NonCancellable) {
+                update(id) { it.copy(refreshToken = session.refreshToken, status = LoginStatus.Ok) }
+            }
             session
         }
 
