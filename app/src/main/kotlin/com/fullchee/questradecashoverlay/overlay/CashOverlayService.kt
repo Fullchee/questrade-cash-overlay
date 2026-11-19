@@ -57,7 +57,7 @@ class CashOverlayService : AccessibilityService() {
                 windows.updateViewLayout(view, overlayLayout(content.totalBox))
             }
             else -> shown = TextView(this).also {
-                it.setTextSize(TypedValue.COMPLEX_UNIT_SP, 18f)
+                it.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
                 it.setBackgroundColor(OVERLAY_BACKGROUND)
                 it.setPadding(dp(12), dp(6), dp(12), dp(6))
                 it.show(content)
