@@ -62,4 +62,14 @@ class MainActivityTest {
 
         composeRule.onNodeWithText("Add login").assertIsDisplayed()
     }
+
+    @Test
+    fun setupStepsReopensOnboardingFromTheLogins() {
+        SetupChecks(app).markOnboardingFinished()
+        ActivityScenario.launch(MainActivity::class.java)
+
+        composeRule.onNodeWithText("Setup steps").performClick()
+
+        composeRule.onNodeWithText("Allow restricted settings").assertIsDisplayed()
+    }
 }

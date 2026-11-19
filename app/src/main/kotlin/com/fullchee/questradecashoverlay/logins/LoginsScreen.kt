@@ -43,7 +43,7 @@ private sealed interface TokenForm {
 }
 
 @Composable
-fun LoginsScreen(store: LoginStore, questrade: QuestradeClient) {
+fun LoginsScreen(store: LoginStore, questrade: QuestradeClient, openSetup: () -> Unit) {
     val logins by store.logins.collectAsState(initial = emptyList())
     val scope = rememberCoroutineScope()
     var form by remember { mutableStateOf<TokenForm?>(null) }
@@ -97,6 +97,7 @@ fun LoginsScreen(store: LoginStore, questrade: QuestradeClient) {
                 }
             )
         }
+        TextButton(onClick = openSetup) { Text(stringResource(R.string.logins_setup_steps)) }
     }
 
     removing?.let { login ->

@@ -40,7 +40,11 @@ class LoginsScreenTest {
     fun setUp() {
         server.start()
         composeRule.setContent {
-            LoginsScreen(store, QuestradeClient(OkHttpClient(), loginServer = server.url("/")))
+            LoginsScreen(
+                store,
+                QuestradeClient(OkHttpClient(), loginServer = server.url("/")),
+                openSetup = {}
+            )
         }
     }
 

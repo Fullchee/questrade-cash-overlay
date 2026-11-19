@@ -22,6 +22,7 @@
     <string name="login_needs_reconnecting_title">%1$s 需要重新连接</string>
     <string name="login_needs_reconnecting_body">Questrade 拒绝了此登录的令牌。点按以粘贴新令牌。</string>
     <string name="logins_add">添加登录</string>
+    <string name="logins_setup_steps">设置步骤</string>
     <string name="logins_name">名称</string>
     <string name="logins_refresh_token">刷新令牌</string>
     <string name="logins_save">保存</string>

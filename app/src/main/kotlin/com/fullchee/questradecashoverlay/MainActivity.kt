@@ -38,7 +38,7 @@ class MainActivity : ComponentActivity() {
                             }
                         )
                     } else {
-                        LoginsScreen(loginStore(this), questrade)
+                        LoginsScreen(loginStore(this), questrade, openSetup = { onboarding = true })
                     }
                 }
             }
