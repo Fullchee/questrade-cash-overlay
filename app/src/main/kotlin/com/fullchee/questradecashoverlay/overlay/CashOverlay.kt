@@ -26,7 +26,7 @@ private val CASH_LABELS = mapOf(
     Currency.getInstance("USD") to R.string.overlay_usd_cash
 )
 
-/** [cashShort] is true when the order's total exceeds the cash held in its currency. [totalBox] is null when the screen has no "Total amount" box to sit beside. */
+/** [cashShort] is true when the order's total, zero if empty, exceeds the cash held in its currency. [totalBox] is null when the screen has no "Total amount" box to sit beside. */
 data class OverlayContent(val text: String, val cashShort: Boolean, val totalBox: Rect?)
 
 /** Keeps the overlay showing the selected account's cash while Questrade's order screen is open. */
@@ -72,7 +72,8 @@ class CashOverlay(
             }
         }.joinToString("\n").ifEmpty { null } ?: return null
         val orderCash = screen.currency?.let(cash::get)
-        val cashShort = orderCash != null && screen.total != null && orderCash < screen.total
+        // An empty total box means nothing is being bought yet, so only negative cash is short.
+        val cashShort = orderCash != null && orderCash < (screen.total ?: BigDecimal.ZERO)
         return OverlayContent(text, cashShort, screen.totalBox)
     }
 }

@@ -81,10 +81,19 @@ class CashOverlayTest {
     }
 
     @Test
-    fun `without a total the cash is not short`() = runTest {
+    fun `without a total positive cash is not short`() = runTest {
         start()
 
         assertFalse(renders.single()!!.cashShort)
+    }
+
+    @Test
+    fun `without a total negative cash is short`() = runTest {
+        cash = mapOf(CAD to BigDecimal("-5"))
+
+        start()
+
+        assertTrue(renders.single()!!.cashShort)
     }
 
     @Test
