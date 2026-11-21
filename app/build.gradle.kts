@@ -21,6 +21,22 @@ android {
         versionName = "0.1.0"
     }
 
+    signingConfigs {
+        create("release") {
+            // The keystore and passwords live in ~/.gradle/gradle.properties, outside the repo.
+            storeFile = providers.gradleProperty("QCO_KEYSTORE_PATH").orNull?.let(::file)
+            storePassword = providers.gradleProperty("QCO_KEYSTORE_PASSWORD").orNull
+            keyAlias = providers.gradleProperty("QCO_KEY_ALIAS").orNull
+            keyPassword = providers.gradleProperty("QCO_KEY_PASSWORD").orNull
+        }
+    }
+
+    buildTypes {
+        release {
+            signingConfig = signingConfigs.getByName("release")
+        }
+    }
+
     buildFeatures {
         compose = true
     }
