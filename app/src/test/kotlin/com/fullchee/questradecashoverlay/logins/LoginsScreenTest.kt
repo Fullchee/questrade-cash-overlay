@@ -63,9 +63,8 @@ class LoginsScreenTest {
         composeRule.onNodeWithText("Mom").assertIsDisplayed()
         composeRule.onAllNodesWithText("refresh-secret").assertCountEquals(0)
         val login = runBlocking { store.logins.first() }.single()
-        val index = runBlocking { store.accountIndex.first() }
-        assertEquals(login.id, index.loginFor(AccountNumber("11111111")))
-        assertEquals(login.id, index.loginFor(AccountNumber("22222222")))
+        assertEquals(login.id, waitForLoginOf(AccountNumber("11111111")))
+        assertEquals(login.id, waitForLoginOf(AccountNumber("22222222")))
         assertEquals("refresh-secret", server.takeRequest().url.queryParameter("refresh_token"))
     }
 
@@ -166,12 +165,7 @@ class LoginsScreenTest {
 
         waitForText("OK")
         composeRule.onAllNodesWithText("refresh-new").assertCountEquals(0)
-        assertEquals(
-            id,
-            runBlocking {
-                store.accountIndex.first()
-            }.loginFor(AccountNumber("33333333"))
-        )
+        assertEquals(id, waitForLoginOf(AccountNumber("33333333")))
     }
 
     @Test
@@ -268,6 +262,16 @@ class LoginsScreenTest {
             composeRule.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()
         }
     }
+
+    // The login shows OK before its accounts load, so the index fills in after the text appears.
+    private fun waitForLoginOf(account: AccountNumber): LoginId? {
+        composeRule.waitUntil(5_000) { loginOf(account) != null }
+        return loginOf(account)
+    }
+
+    private fun loginOf(account: AccountNumber) = runBlocking {
+        store.accountIndex.first()
+    }.loginFor(account)
 
     private fun json(body: String) = MockResponse.Builder()
         .addHeader("Content-Type", "application/json")
