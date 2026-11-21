@@ -40,6 +40,7 @@ private fun toNode(element: Element): AccessibilityNodeInfo = node(
 )
 
 // uiautomator writes bounds as [left,top][right,bottom].
+@Suppress("DestructuringDeclarationWithTooManyEntries") // A Rect has exactly 4 sides.
 private fun parseBounds(bounds: String): Rect {
     val (left, top, right, bottom) = Regex("""-?\d+""").findAll(bounds).map {
         it.value.toInt()

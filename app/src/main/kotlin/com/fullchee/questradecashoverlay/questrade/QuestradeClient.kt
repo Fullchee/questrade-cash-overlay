@@ -64,6 +64,7 @@ class QuestradeClient(
         return get(http, request, parse)
     }
 
+    @Suppress("SwallowedException") // The cause can quote tokens; see the catch below.
     private suspend fun <T> get(client: OkHttpClient, request: Request, parse: (String) -> T): T {
         val text = fetch(client, request)
         return try {

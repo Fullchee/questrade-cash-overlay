@@ -113,22 +113,29 @@ fun LoginsScreen(store: LoginStore, questrade: QuestradeClient, openMenu: () -> 
     if (showingTokenSteps) RefreshTokenStepsDialog(onDismiss = { showingTokenSteps = false })
 
     removing?.let { login ->
-        AlertDialog(
-            onDismissRequest = { removing = null },
-            title = { Text(stringResource(R.string.logins_remove_title, login.name)) },
-            confirmButton = {
-                TextButton(onClick = {
-                    removing = null
-                    scope.launch { store.remove(login.id) }
-                }) { Text(stringResource(R.string.logins_remove_confirm)) }
+        RemoveLoginDialog(
+            name = login.name,
+            onConfirm = {
+                removing = null
+                scope.launch { store.remove(login.id) }
             },
-            dismissButton = {
-                TextButton(onClick = { removing = null }) {
-                    Text(stringResource(R.string.logins_cancel))
-                }
-            }
+            onDismiss = { removing = null }
         )
     }
+}
+
+@Composable
+private fun RemoveLoginDialog(name: String, onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.logins_remove_title, name)) },
+        confirmButton = {
+            TextButton(onClick = onConfirm) { Text(stringResource(R.string.logins_remove_confirm)) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.logins_cancel)) }
+        }
+    )
 }
 
 @Composable

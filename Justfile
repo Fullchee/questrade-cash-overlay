@@ -3,9 +3,9 @@ apk := "app/build/outputs/apk/debug/app-debug.apk"
 avd := env("AVD", "rex-pixel")
 emulator_bin := env("ANDROID_HOME", home_directory() / "Library/Android/sdk") / "emulator/emulator"
 
-# Unit tests, ktlint and Android lint
+# Unit tests, ktlint, detekt and Android lint
 test:
-    ./gradlew test ktlintCheck lint
+    ./gradlew test ktlintCheck detekt lint
 
 # Scan every commit for leaked secrets
 leaks:

@@ -1,0 +1,13 @@
+# Only overrides; detekt's defaults apply to everything else.
+naming:
+  FunctionNaming:
+    # Compose names composable functions in PascalCase.
+    ignoreAnnotated: ['Composable']
+
+style:
+  MaxLineLength:
+    # ktlint owns formatting, including line length.
+    active: false
+  ReturnCount:
+    # Early exits like `?: return null` read as guards, not branching logic.
+    excludeGuardClauses: true

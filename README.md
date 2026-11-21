@@ -8,7 +8,7 @@ Scope and decisions: [docs/intent/questrade-cash-overlay.md](docs/intent/questra
 
 1. Install the Android SDK, then run `mise install` for `just` and `betterleaks`. Gradle downloads JDK 21 itself.
 2. Run `just hooks` once, so every push runs the tests and the secret scan.
-3. Run `just test` for unit tests, ktlint and Android lint (which fails on hard-coded UI text and missing Chinese strings).
+3. Run `just test` for unit tests, ktlint, detekt and Android lint (which fails on hard-coded UI text and missing Chinese strings).
 4. Run `just emulator` to start the emulator if needed, then install and launch the debug app. `just apk` only builds the APK.
 5. Run `just phone` to build, install and launch the debug app on the plugged-in phone (USB debugging on).
 

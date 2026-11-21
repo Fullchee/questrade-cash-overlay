@@ -57,9 +57,14 @@ class CashOverlayService : AccessibilityService() {
                 windows.updateViewLayout(view, overlayLayout(content.totalBox))
             }
             else -> shown = TextView(this).also {
-                it.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
+                it.setTextSize(TypedValue.COMPLEX_UNIT_SP, TEXT_SIZE_SP)
                 it.setBackgroundColor(OVERLAY_BACKGROUND)
-                it.setPadding(dp(12), dp(6), dp(12), dp(6))
+                it.setPadding(
+                    dp(PADDING_X_DP),
+                    dp(PADDING_Y_DP),
+                    dp(PADDING_X_DP),
+                    dp(PADDING_Y_DP)
+                )
                 it.show(content)
                 windows.addView(it, overlayLayout(content.totalBox))
             }
@@ -86,18 +91,26 @@ class CashOverlayService : AccessibilityService() {
         gravity = Gravity.TOP or Gravity.END
         if (totalBox == null) {
             // Top right sits beside the symbol header (spike 0 bounds).
-            x = dp(16)
-            y = dp(64)
+            x = dp(HEADER_RIGHT_DP)
+            y = dp(HEADER_TOP_DP)
         } else {
             // The box's top right holds only its currency label, which the overlay repeats (spike 0 bounds).
-            x = resources.displayMetrics.widthPixels - totalBox.right + dp(8)
-            y = totalBox.top + dp(4)
+            x = resources.displayMetrics.widthPixels - totalBox.right + dp(TOTAL_BOX_INSET_RIGHT_DP)
+            y = totalBox.top + dp(TOTAL_BOX_INSET_TOP_DP)
         }
     }
 
     private fun dp(value: Int) = (value * resources.displayMetrics.density).toInt()
 
     private companion object {
+        const val TEXT_SIZE_SP = 16f
+        const val PADDING_X_DP = 12
+        const val PADDING_Y_DP = 6
+        const val HEADER_RIGHT_DP = 16
+        const val HEADER_TOP_DP = 64
+        const val TOTAL_BOX_INSET_RIGHT_DP = 8
+        const val TOTAL_BOX_INSET_TOP_DP = 4
+
         val OVERLAY_BACKGROUND = Color.argb(235, 33, 33, 33)
 
         // Bright enough to read on the dark background.

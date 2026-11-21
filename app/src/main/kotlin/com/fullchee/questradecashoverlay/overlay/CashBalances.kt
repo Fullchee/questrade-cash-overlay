@@ -28,6 +28,7 @@ class CashBalances(
     private val sessions = mutableMapOf<LoginId, Session>()
 
     /** Returns null when no login can read [account]. */
+    @Suppress("SwallowedException") // An expired access token is routine, not an error to report.
     suspend fun of(account: AccountNumber): Map<Currency, BigDecimal>? {
         val recent = fetched[account]
         if (recent != null && nowMillis() - recent.atMillis < CACHE_MILLIS) return recent.cash

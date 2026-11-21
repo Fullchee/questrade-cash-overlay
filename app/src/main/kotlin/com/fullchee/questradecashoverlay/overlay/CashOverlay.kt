@@ -53,6 +53,8 @@ class CashOverlay(
         }
     }
 
+    // Any crash would switch the service off; see the catch below.
+    @Suppress("TooGenericExceptionCaught")
     private suspend fun content(): OverlayContent? {
         val screen = readActiveWindow()?.let(::readOrderScreen) ?: return null
         val cash = try {

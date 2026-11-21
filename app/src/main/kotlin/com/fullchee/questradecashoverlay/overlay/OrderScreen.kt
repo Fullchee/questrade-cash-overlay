@@ -66,7 +66,11 @@ private fun selectedAccount(nodes: List<AccessibilityNodeInfo>): AccountNumber? 
     val labelId =
         pickerCard?.let { "oe-account-selector-account-card-$it-acoount-name" }
             ?: SELECTED_ACCOUNT_ID
-    byId[labelId]?.text?.let { return parseAccountNumber(it.toString()) }
+    val label = byId[labelId]?.text ?: return onlyAccountLabel(nodes)
+    return parseAccountNumber(label.toString())
+}
+
+private fun onlyAccountLabel(nodes: List<AccessibilityNodeInfo>): AccountNumber? {
     // Other Questrade screens show account labels too, so only the order form's total marks this as the order screen.
     if (nodes.none { it.contentDescription?.startsWith(TOTAL_AMOUNT) == true }) return null
     // Questrade renamed its IDs: trust the account label only when it can't be another card's.
