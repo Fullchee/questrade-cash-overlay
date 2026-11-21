@@ -7,6 +7,10 @@ emulator_bin := env("ANDROID_HOME", home_directory() / "Library/Android/sdk") / 
 test:
     ./gradlew test ktlintCheck lint
 
+# Scan every commit for leaked secrets
+leaks:
+    betterleaks git --no-banner .
+
 # Build the debug APK
 apk:
     ./gradlew assembleDebug

@@ -1,0 +1,4 @@
+# Gradle pins Java (toolchain) and itself (wrapper); mise pins the other CLIs, for laptops and CI alike.
+[tools]
+just = "1.59.0"
+betterleaks = "1.10.1"
