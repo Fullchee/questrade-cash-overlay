@@ -22,7 +22,6 @@
     <string name="login_needs_reconnecting_title">%1$s 需要重新连接</string>
     <string name="login_needs_reconnecting_body">Questrade 拒绝了此登录的令牌。点按以粘贴新令牌。</string>
     <string name="logins_add">添加登录</string>
-    <string name="logins_setup_steps">设置步骤</string>
     <string name="logins_name">名称</string>
     <string name="logins_refresh_token">刷新令牌</string>
     <string name="logins_save">保存</string>
@@ -40,4 +39,17 @@
     <string name="logins_error_questrade">Questrade 返回了错误。请稍后重试。</string>
     <string name="overlay_cad_cash">加元现金：%1$s</string>
     <string name="overlay_usd_cash">美元现金：%1$s</string>
+    <string name="menu_open">打开菜单</string>
+    <string name="menu_setup_steps">设置步骤</string>
+    <string name="menu_language">语言 · Language</string>
+    <string name="menu_cancel">取消</string>
+    <string name="token_steps_title">获取刷新令牌</string>
+    <string name="token_steps_1">1. 打开 API 中心：%1$s，或点按下方的“打开 Questrade”。如有提示，请登录。</string>
+    <string name="token_steps_2">2. 如有提示，点按“Activate API”并接受条款。</string>
+    <string name="token_steps_3">3. 点按“Register a personal app”。只允许读取账户数据，不要允许交易。名称随意。</string>
+    <string name="token_steps_4">4. 在新应用下点按“Generate new token”。如果看不到，请先点按“New device”。</string>
+    <string name="token_steps_5">5. 复制令牌，然后在“添加登录”中粘贴。每个令牌只能用一次，未使用的令牌会过期，请尽快粘贴。</string>
+    <string name="token_steps_open_questrade">打开 Questrade</string>
+    <string name="token_steps_close">关闭</string>
+    <string name="logins_token_help">如何获取令牌？</string>
 </resources>

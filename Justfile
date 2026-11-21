@@ -32,3 +32,13 @@ phone: apk
 # Run the tests before every push
 hooks:
     git config core.hooksPath .githooks
+
+# Build the signed release APK and publish it as a GitHub release for the versionName in app/build.gradle.kts
+release:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    version=$(sed -n 's/.*versionName = "\(.*\)"/\1/p' app/build.gradle.kts)
+    ./gradlew assembleRelease
+    out="app/build/outputs/apk/release/questrade-cash-overlay-v$version.apk"
+    cp app/build/outputs/apk/release/app-release.apk "$out"
+    GH_TOKEN=$(gh auth token --user Fullchee) gh release create "v$version" "$out" --target main --title "v$version" --generate-notes

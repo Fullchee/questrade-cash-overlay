@@ -10,9 +10,9 @@ Confirmed 2026-11-17.
 | **Why** | Stop surprise currency conversions when buying with cash the account doesn't hold in that currency |
 | **How it matches** | Read `Cash - <account number>` from the order screen; look the number up across every saved login |
 | **Setup** | Guided onboarding: allow restricted settings, accessibility, notifications, battery "No restrictions", Xiaomi Autostart. Each step shows a ✓ when done |
-| **Success** | They choose an account and see its exact cash in the order's currency, labelled as cash held in that currency, with no app switching or token handling |
+| **Success** | They choose an account and see its exact cash in the order's currency, labelled as cash held in that currency, beside the order's total, in bold red when the total is more than that cash. No app switching or token handling |
 | **Upkeep** | Read-only Questrade API. A daily WorkManager job rotates each login's refresh token on the phone. When one breaks, the overlay says so and the owner pastes a new token |
-| **Out of scope** | Placing trades, comparing the order total to the cash, other phones, Play Store release, iOS, any server or GitHub Actions |
+| **Out of scope** | Placing trades, other phones, Play Store release, iOS, any server or GitHub Actions |
 
 ## Facts this rests on
 

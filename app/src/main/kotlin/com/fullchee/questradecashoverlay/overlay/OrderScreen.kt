@@ -1,8 +1,10 @@
 package com.fullchee.questradecashoverlay.overlay
 
+import android.graphics.Rect
 import android.view.accessibility.AccessibilityNodeInfo
 import com.fullchee.questradecashoverlay.AccountNumber
 import com.fullchee.questradecashoverlay.parseAccountNumber
+import java.math.BigDecimal
 import java.util.Currency
 
 const val QUESTRADE_PACKAGE = "com.questrade.questmobile"
@@ -14,22 +16,47 @@ private val selectedPickerCard = Regex("""oe-account-selector-account-card-(\d+)
 
 private const val TOTAL_AMOUNT = "Total amount"
 
+private const val TOTAL_AMOUNT_INPUT_ID = "order-entry-setup-dollar-amount"
+
 // Questrade's API holds cash only in CAD and USD.
 private val orderCurrency = Regex("""$TOTAL_AMOUNT, \$, (CAD|USD)""")
 
-/** [currency] is null when the screen doesn't say which currency the order is in. */
-data class OrderScreen(val account: AccountNumber, val currency: Currency?)
+/**
+ * [currency] is null when the screen doesn't say which currency the order is in.
+ * [total] is null until the order has an amount. [totalBox] is the "Total amount" box's screen bounds.
+ */
+data class OrderScreen(
+    val account: AccountNumber,
+    val currency: Currency?,
+    val total: BigDecimal? = null,
+    val totalBox: Rect? = null
+)
 
 /** Returns null off Questrade's order screen. View IDs are React Native testIDs; see docs/spike/0-questrade-view-tree.md. */
 fun readOrderScreen(root: AccessibilityNodeInfo): OrderScreen? {
     if (root.packageName != QUESTRADE_PACKAGE) return null
     val nodes = root.descendants().toList()
     val account = selectedAccount(nodes) ?: return null
-    val currency = nodes.firstNotNullOfOrNull { node ->
-        node.contentDescription?.let { orderCurrency.matchEntire(it) }
-    }?.let { Currency.getInstance(it.groupValues[1]) }
-    return OrderScreen(account, currency)
+    val totalBox = nodes.firstOrNull { it.contentDescription?.startsWith(TOTAL_AMOUNT) == true }
+    val currency = totalBox?.contentDescription
+        ?.let { orderCurrency.matchEntire(it) }
+        ?.let { Currency.getInstance(it.groupValues[1]) }
+    val total = nodes.firstOrNull { it.viewIdResourceName == TOTAL_AMOUNT_INPUT_ID }
+        ?.text
+        ?.let(::parseDollars)
+    return OrderScreen(
+        account,
+        currency,
+        total,
+        totalBox?.let {
+            Rect().also(it::getBoundsInScreen)
+        }
+    )
 }
+
+// Typed amounts may carry thousands separators or a dollar sign; an empty box has no total yet.
+private fun parseDollars(text: CharSequence): BigDecimal? =
+    text.toString().replace(",", "").removePrefix("$").trim().toBigDecimalOrNull()
 
 private fun selectedAccount(nodes: List<AccessibilityNodeInfo>): AccountNumber? {
     val byId = nodes.filter { it.viewIdResourceName != null }.associateBy { it.viewIdResourceName }

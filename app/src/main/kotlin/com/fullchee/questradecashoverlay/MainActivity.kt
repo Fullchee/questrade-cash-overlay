@@ -13,6 +13,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.fullchee.questradecashoverlay.logins.LoginsScreen
 import com.fullchee.questradecashoverlay.logins.loginStore
+import com.fullchee.questradecashoverlay.menu.MainMenu
 import com.fullchee.questradecashoverlay.onboarding.OnboardingScreen
 import com.fullchee.questradecashoverlay.onboarding.SetupChecks
 import com.fullchee.questradecashoverlay.onboarding.settingsIntent
@@ -38,7 +39,9 @@ class MainActivity : ComponentActivity() {
                             }
                         )
                     } else {
-                        LoginsScreen(loginStore(this), questrade, openSetup = { onboarding = true })
+                        MainMenu(openSetup = { onboarding = true }) { openMenu ->
+                            LoginsScreen(loginStore(this), questrade, openMenu)
+                        }
                     }
                 }
             }

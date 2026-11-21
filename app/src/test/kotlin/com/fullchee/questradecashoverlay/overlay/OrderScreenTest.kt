@@ -1,7 +1,9 @@
 package com.fullchee.questradecashoverlay.overlay
 
+import android.graphics.Rect
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.fullchee.questradecashoverlay.AccountNumber
+import java.math.BigDecimal
 import java.util.Currency
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -14,19 +16,34 @@ class OrderScreenTest {
     private val usd = Currency.getInstance("USD")
 
     @Test
-    fun `the order screen fixture gives the selected account and the order currency`() {
+    fun `the order screen fixture gives the account, currency and Total amount box`() {
         assertEquals(
-            OrderScreen(AccountNumber("22222222"), cad),
+            OrderScreen(
+                AccountNumber("22222222"),
+                cad,
+                total = null,
+                totalBox = Rect(42, 706, 1038, 880)
+            ),
             readOrderScreen(viewTreeFixture("order-screen"))
         )
     }
 
     @Test
     fun `the open account picker gives the card marked selected`() {
-        assertEquals(
-            OrderScreen(AccountNumber("22222222"), cad),
-            readOrderScreen(viewTreeFixture("account-picker"))
-        )
+        val screen = readOrderScreen(viewTreeFixture("account-picker"))
+
+        assertEquals(AccountNumber("22222222"), screen?.account)
+        assertEquals(cad, screen?.currency)
+    }
+
+    @Test
+    fun `a typed total is read with its separators and dollar sign`() {
+        assertEquals(BigDecimal("1234.50"), readOrderScreen(orderWithTotal("$1,234.50"))?.total)
+    }
+
+    @Test
+    fun `a total that isn't a number is unknown`() {
+        assertNull(readOrderScreen(orderWithTotal("abc"))?.total)
     }
 
     @Test
@@ -75,7 +92,7 @@ class OrderScreenTest {
             )
         )
 
-        assertEquals(OrderScreen(AccountNumber("11111111"), null), readOrderScreen(screen))
+        assertNull(readOrderScreen(screen)?.currency)
     }
 
     @Test
@@ -119,4 +136,12 @@ class OrderScreenTest {
 
         assertNull(readOrderScreen(screen))
     }
+
+    private fun orderWithTotal(total: String) = node(
+        children = listOf(
+            node(viewId = "oe-account-selector-selected-account-name", text = "Cash - 11111111"),
+            node(contentDescription = "Total amount, $, CAD"),
+            node(viewId = "order-entry-setup-dollar-amount", text = total)
+        )
+    )
 }

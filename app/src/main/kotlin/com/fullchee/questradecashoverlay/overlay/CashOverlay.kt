@@ -1,6 +1,7 @@
 package com.fullchee.questradecashoverlay.overlay
 
 import android.content.res.Resources
+import android.graphics.Rect
 import android.util.Log
 import android.view.accessibility.AccessibilityNodeInfo
 import com.fullchee.questradecashoverlay.AccountNumber
@@ -25,13 +26,16 @@ private val CASH_LABELS = mapOf(
     Currency.getInstance("USD") to R.string.overlay_usd_cash
 )
 
+/** [cashShort] is true when the order's total, zero if empty, exceeds the cash held in its currency. [totalBox] is null when the screen has no "Total amount" box to sit beside. */
+data class OverlayContent(val text: String, val cashShort: Boolean, val totalBox: Rect?)
+
 /** Keeps the overlay showing the selected account's cash while Questrade's order screen is open. */
 class CashOverlay(
     private val resources: Resources,
     private val readActiveWindow: () -> AccessibilityNodeInfo?,
     private val cashOf: suspend (AccountNumber) -> Map<Currency, BigDecimal>?,
-    /** Shows the text, or hides the overlay on null. */
-    private val render: (String?) -> Unit
+    /** Shows the content, or hides the overlay on null. */
+    private val render: (OverlayContent?) -> Unit
 ) {
     // Questrade shows dollars as $1,234.56 for both currencies, whatever the phone's language.
     private val dollars = DecimalFormat("\$#,##0.00;-\$#,##0.00", DecimalFormatSymbols(Locale.US))
@@ -39,9 +43,9 @@ class CashOverlay(
     /** Runs until cancelled, rechecking the screen on each of [wakeUps]. */
     suspend fun run(wakeUps: ReceiveChannel<Unit>) {
         while (true) {
-            val text = cashText()
-            render(text)
-            if (text == null) {
+            val content = content()
+            render(content)
+            if (content == null) {
                 wakeUps.receive()
             } else {
                 withTimeoutOrNull(RECHECK_WHILE_SHOWN) { wakeUps.receive() }
@@ -49,7 +53,7 @@ class CashOverlay(
         }
     }
 
-    private suspend fun cashText(): String? {
+    private suspend fun content(): OverlayContent? {
         val screen = readActiveWindow()?.let(::readOrderScreen) ?: return null
         val cash = try {
             cashOf(screen.account)
@@ -62,10 +66,14 @@ class CashOverlay(
         } ?: return null
         val shown = screen.currency?.let(::listOf) ?: CASH_LABELS.keys
         // Questrade sends both currencies today; a missing one has nothing to show.
-        return shown.mapNotNull { currency ->
+        val text = shown.mapNotNull { currency ->
             cash[currency]?.let {
                 resources.getString(CASH_LABELS.getValue(currency), dollars.format(it))
             }
-        }.joinToString("\n").ifEmpty { null }
+        }.joinToString("\n").ifEmpty { null } ?: return null
+        val orderCash = screen.currency?.let(cash::get)
+        // An empty total box means nothing is being bought yet, so only negative cash is short.
+        val cashShort = orderCash != null && orderCash < (screen.total ?: BigDecimal.ZERO)
+        return OverlayContent(text, cashShort, screen.totalBox)
     }
 }
